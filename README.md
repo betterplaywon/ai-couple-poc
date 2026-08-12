@@ -23,13 +23,29 @@
 
 ```bash
 pnpm install
-pnpm dev      # 개발 서버
+echo 'ANTHROPIC_API_KEY=sk-ant-...' > .env.local
+
+pnpm dev      # 개발 서버 (api/chat.ts도 함께 뜹니다)
 pnpm test     # 상태 엔진 로직 테스트
+pnpm lint
 pnpm build    # 프로덕션 빌드
 ```
 
 API 키는 서버리스 함수에서만 읽습니다. `.env.local`에 `ANTHROPIC_API_KEY`를 넣으세요.
 `VITE_` 접두사를 붙이면 클라이언트 번들에 노출되므로 절대 사용하지 않습니다.
+
+## 구조
+
+```
+src/engine/     상태 전이 순수 함수 — 호감도 클램프·화 전환·엔딩 분기·회귀. 여기만 테스트한다
+src/scenario/   캐릭터 카드 · 3화 · 엔딩 대사 · 회차 각성 · 위기 대응 문구 · 프롬프트 조립
+src/components/ 게이지 · 대화 · 입력 · 엔딩 화면
+api/chat.ts     Claude API 프록시 (1개). 프롬프트만 조립하고 원문을 그대로 돌려준다
+```
+
+**진행 제어는 코드, 연기는 LLM.** 모델은 `scene_advance` 신호만 주고, 화 전환과 엔딩 판정은
+`src/engine/`이 턴 수와 임계값으로 결정합니다. 모델이 준 `affection_delta`는 클램프한 뒤 누적합니다.
+상태 전이는 클라이언트 한 곳에만 있고, 서버는 상태를 들지 않습니다.
 
 ## 어떻게 만들었나
 
@@ -57,6 +73,6 @@ AI가 코드를 대량 생산할 때의 실패는 "틀린 코드"가 아니라 *
 
 ## 스택
 
-Vite · React 19 · TypeScript · Vercel 서버리스 함수 · Claude API
+Vite · React 19 · TypeScript · Vercel 서버리스 함수 1개 · Claude API (`claude-sonnet-5`, 구조화 출력)
 
 상태는 메모리에만 둡니다. 새로고침하면 처음부터 — [그것도 회귀입니다](docs/05-decisions/ADR-001-no-persistence.md).
