@@ -118,11 +118,16 @@ body { background: var(--bg); }
 .ending.true .ending-label { color: var(--warm); }
 .ending-title { font-size: 27px; margin: 6px 0 30px; font-weight: 700; }
 
-.ending-lines p, .ending-closing, .ending-foot { opacity: 0; animation: fade 1s ease forwards; }
+.ending-lines p, .ending-closing, .ending-foot, .epilogue p { opacity: 0; animation: fade 1s ease forwards; }
 @keyframes fade { to { opacity: 1; } }
 
 .ending-lines p { white-space: pre-wrap; margin: 0 0 18px; line-height: 1.75; }
 .ending-closing { white-space: pre-wrap; margin: 28px 0 0; padding-top: 22px; border-top: 1px solid var(--line); color: var(--dim); font-size: 14px; }
+
+/* 트루엔딩 뒤 "연인이 된 다음 날". 엔딩의 연장이지 대화가 아니다. */
+.epilogue { margin-top: 34px; padding-top: 26px; border-top: 1px solid var(--line); }
+.epilogue-heading { font-size: 11px; letter-spacing: .18em; color: var(--warm); margin-bottom: 20px; }
+.epilogue p { white-space: pre-wrap; margin: 0 0 18px; line-height: 1.75; }
 
 .ending-foot { margin-top: auto; padding-top: 34px; }
 .ending-stats { font-size: 12px; color: var(--dim); margin-bottom: 12px; font-variant-numeric: tabular-nums; }

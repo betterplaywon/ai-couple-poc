@@ -26,7 +26,7 @@
 
 ```bash
 pnpm install
-echo 'ANTHROPIC_API_KEY=sk-ant-...' > .env.local
+echo 'GEMINI_API_KEY=AIza...' > .env.local   # https://aistudio.google.com/apikey
 
 pnpm dev      # 개발 서버 (api/chat.ts도 함께 뜹니다)
 pnpm test     # 상태 엔진 로직 테스트
@@ -34,7 +34,7 @@ pnpm lint
 pnpm build    # 프로덕션 빌드
 ```
 
-API 키는 서버리스 함수에서만 읽습니다. `.env.local`에 `ANTHROPIC_API_KEY`를 넣으세요.
+API 키는 서버리스 함수에서만 읽습니다. `.env.local`에 `GEMINI_API_KEY`를 넣으세요.
 `VITE_` 접두사를 붙이면 클라이언트 번들에 노출되므로 절대 사용하지 않습니다.
 
 ### 데모 모드 (키 없이 실행)
@@ -51,7 +51,7 @@ API 키는 서버리스 함수에서만 읽습니다. `.env.local`에 `ANTHROPIC
 src/engine/     상태 전이 순수 함수 — 호감도 클램프·화 전환·엔딩 분기·회귀. 여기만 테스트한다
 src/scenario/   캐릭터 카드 · 3화 · 엔딩 대사 · 회차 각성 · 위기 대응 문구 · 프롬프트 조립
 src/components/ 게이지 · 대화 · 입력 · 엔딩 화면
-api/chat.ts     Claude API 프록시 (1개). 프롬프트만 조립하고 원문을 그대로 돌려준다
+api/chat.ts     LLM 프록시 (1개). 프롬프트만 조립하고 원문을 그대로 돌려준다
 ```
 
 **진행 제어는 코드, 연기는 LLM.** 모델은 `scene_advance` 신호만 주고, 화 전환과 엔딩 판정은
@@ -61,6 +61,10 @@ api/chat.ts     Claude API 프록시 (1개). 프롬프트만 조립하고 원문
 ## 어떻게 만들었나
 
 모든 개발은 Claude Code로 진행했습니다. 세션 기록은 [`transcripts/`](transcripts/)에 있습니다.
+
+런타임 모델은 Gemini입니다 — 개발 도구(Claude Code)와 제품이 호출하는 모델은 별개입니다.
+제공자 교체 때 바뀐 파일은 [`api/chat.ts`](api/chat.ts) 하나이고, 프롬프트·상태 엔진·UI는 그대로입니다
+([#18](docs/03-tradeoffs.md)).
 
 AI가 코드를 대량 생산할 때의 실패는 "틀린 코드"가 아니라 **"이해할 수 없게 불어난 코드"**로 옵니다.
 그래서 앱보다 개발 환경을 먼저 만들었습니다.
@@ -84,7 +88,7 @@ AI가 코드를 대량 생산할 때의 실패는 "틀린 코드"가 아니라 *
 
 ## 스택
 
-Vite · React 19 · TypeScript · Vercel 서버리스 함수 1개 · Claude API (`claude-sonnet-5`, 구조화 출력)
+Vite · React 19 · TypeScript · Vercel 서버리스 함수 1개 · Gemini API (`gemini-3.6-flash`, 구조화 출력)
 
 키가 없으면 `src/scenario/mock.ts`의 규칙 기반 응답으로 자동 폴백합니다 ([#17](docs/03-tradeoffs.md)).
 
