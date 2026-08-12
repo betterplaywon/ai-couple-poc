@@ -29,8 +29,14 @@ describe('applyDelta — 클램프 후 누적', () => {
     expect(createState().affection).toBe(30)
   })
 
-  it('delta 상한 +3을 넘겨도 +3만 오른다', () => {
-    expect(applyDelta(stateAt(), 99).affection).toBe(33)
+  it('delta 상한 +4를 넘겨도 +4만 오른다', () => {
+    expect(applyDelta(stateAt(), 99).affection).toBe(34)
+  })
+
+  it('상한(+4)보다 하한(-5)이 여전히 크다 — 비대칭은 유지된다', () => {
+    const up = applyDelta(stateAt(), 99).affection - 30
+    const down = 30 - applyDelta(stateAt(), -99).affection
+    expect(down).toBeGreaterThan(up)
   })
 
   it('delta 하한 -5를 넘겨도 -5만 내린다', () => {
@@ -56,12 +62,16 @@ describe('resolveScene — 화 전환', () => {
     expect(resolveScene(stateAt({ turnInScene: 5 }), true)).toBe(false)
   })
 
-  it('6턴 + 신호면 전환한다', () => {
-    expect(resolveScene(stateAt({ turnInScene: 6 }), true)).toBe(true)
+  it('6턴에서는 신호가 와도 전환하지 않는다 (최소 7턴)', () => {
+    expect(resolveScene(stateAt({ turnInScene: 6 }), true)).toBe(false)
   })
 
-  it('6턴이어도 신호가 없으면 전환하지 않는다', () => {
-    expect(resolveScene(stateAt({ turnInScene: 6 }), false)).toBe(false)
+  it('7턴 + 신호면 전환한다', () => {
+    expect(resolveScene(stateAt({ turnInScene: 7 }), true)).toBe(true)
+  })
+
+  it('7턴이어도 신호가 없으면 전환하지 않는다', () => {
+    expect(resolveScene(stateAt({ turnInScene: 7 }), false)).toBe(false)
   })
 
   it('8턴이면 신호 없이도 전환한다', () => {
@@ -95,7 +105,7 @@ describe('applyTurn — 진행 판정', () => {
   })
 
   it('전환 시 다음 화로 넘어가고 턴 수가 0으로 초기화된다', () => {
-    const next = applyTurn(stateAt({ turnInScene: 5 }), turn({ scene_advance: true }))
+    const next = applyTurn(stateAt({ turnInScene: 6 }), turn({ scene_advance: true }))
     expect(next).toMatchObject({ scene: 2, turnInScene: 0 })
   })
 
@@ -121,11 +131,20 @@ describe('applyTurn — 진행 판정', () => {
     expect(applyTurn(ended, turn({ affection_delta: 3 }))).toBe(ended)
   })
 
-  it('LLM이 매턴 전환 신호를 줘도 화당 최소 6턴은 보장된다', () => {
+  it('LLM이 매턴 전환 신호를 줘도 화당 최소 7턴은 보장된다', () => {
     let s = stateAt()
     for (let i = 0; i < 6; i += 1) s = applyTurn(s, turn({ scene_advance: true }))
+    expect(s.scene).toBe(1)
+    s = applyTurn(s, turn({ scene_advance: true }))
     expect(s.scene).toBe(2)
     expect(s.turnInScene).toBe(0)
+  })
+
+  it('전환 신호를 매턴 줘도 최소 21턴은 걸린다 (7×3)', () => {
+    let s = stateAt()
+    let n = 0
+    while (!s.ending && n < 40) { s = applyTurn(s, turn({ scene_advance: true })); n += 1 }
+    expect(n).toBe(21)
   })
 
   it('신호가 한 번도 없어도 3화 × 8턴 = 24턴이면 반드시 끝난다', () => {

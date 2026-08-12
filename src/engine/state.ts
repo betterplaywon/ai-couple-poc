@@ -4,11 +4,11 @@ export const AFFECTION_START = 30
 export const AFFECTION_MIN = 0
 export const AFFECTION_MAX = 100
 
-/** 비대칭 — 잃기는 쉽고 얻기는 어렵다 */
+/** 비대칭 — 잃기는 여전히 더 쉽다. 상한은 체류·보상 체감을 위해 +4로 올렸다 */
 export const DELTA_MIN = -5
-export const DELTA_MAX = 3
+export const DELTA_MAX = 4
 
-export const SCENE_MIN_TURNS = 6
+export const SCENE_MIN_TURNS = 7
 export const SCENE_MAX_TURNS = 8
 export const LAST_SCENE = 3
 
