@@ -7,7 +7,7 @@ export const config = { runtime: 'edge' }
 
 const MODEL = process.env.GEMINI_MODEL ?? 'gemini-3.5-flash-lite'
 const MAX_TOKENS = 1024
-/** 화당 8턴 × 3화 = 24턴. 넉넉히 잡되 무한 이력은 막는다. */
+/** 화당 최대 5턴 × 3화 = 15턴. 넉넉히 잡되 무한 이력은 막는다. */
 const MAX_HISTORY = 48
 
 type Turn = { role: 'user' | 'assistant'; content: string }

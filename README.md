@@ -89,7 +89,7 @@ AI가 코드를 대량 생산할 때의 실패는 "틀린 코드"가 아니라 *
 
 ## 스택
 
-Vite · React 19 · TypeScript · Vercel 서버리스 함수 1개 · Gemini API (`gemini-3.6-flash`, 구조화 출력)
+Vite · React 19 · TypeScript · Vercel 서버리스 함수 1개 · Gemini API (`gemini-3.5-flash-lite`, 구조화 출력)
 
 키가 없으면 `src/scenario/mock.ts`의 규칙 기반 응답으로 자동 폴백합니다 ([#17](docs/03-tradeoffs.md)).
 
