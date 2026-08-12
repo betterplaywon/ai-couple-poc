@@ -1,122 +1,104 @@
 import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from './assets/vite.svg'
-import heroImg from './assets/hero.png'
-import './App.css'
+import { ChatLog, type Msg } from './components/ChatLog'
+import { Composer } from './components/Composer'
+import { EndingView } from './components/EndingView'
+import { StatusBar } from './components/StatusBar'
+import { applyTurn, createState, nextRun } from './engine/state'
+import { parseTurn } from './engine/parseTurn'
+import type { GameState } from './engine/types'
+import { SCENES } from './scenario/scenes'
+import { CRISIS_REPLY, looksLikeCrisis } from './scenario/safety'
+import { ChatError, sendTurn, type ApiTurn } from './api'
 
-function App() {
-  const [count, setCount] = useState(0)
+/** 화가 열릴 때 구분선과 그의 고정 오프닝을 함께 넣는다. */
+function openScene(state: GameState): Msg[] {
+  const scene = SCENES[state.scene]
+  return [
+    { kind: 'scene', text: `${state.scene}화 — ${scene.title}` },
+    { kind: 'him', text: scene.opening, emotion: '' },
+  ]
+}
 
-  return (
-    <>
-      <section id="center">
-        <div className="hero">
-          <img src={heroImg} className="base" width="170" height="179" alt="" />
-          <img src={reactLogo} className="framework" alt="React logo" />
-          <img src={viteLogo} className="vite" alt="Vite logo" />
-        </div>
-        <div>
-          <h1>Get started</h1>
-          <p>
-            Edit <code>src/App.tsx</code> and save to test <code>HMR</code>
-          </p>
-        </div>
-        <button
-          type="button"
-          className="counter"
-          onClick={() => setCount((count) => count + 1)}
-        >
-          Count is {count}
-        </button>
-      </section>
-
-      <div className="ticks"></div>
-
-      <section id="next-steps">
-        <div id="docs">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#documentation-icon"></use>
-          </svg>
-          <h2>Documentation</h2>
-          <p>Your questions, answered</p>
-          <ul>
-            <li>
-              <a href="https://vite.dev/" target="_blank">
-                <img className="logo" src={viteLogo} alt="" />
-                Explore Vite
-              </a>
-            </li>
-            <li>
-              <a href="https://react.dev/" target="_blank">
-                <img className="button-icon" src={reactLogo} alt="" />
-                Learn more
-              </a>
-            </li>
-          </ul>
-        </div>
-        <div id="social">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#social-icon"></use>
-          </svg>
-          <h2>Connect with us</h2>
-          <p>Join the Vite community</p>
-          <ul>
-            <li>
-              <a href="https://github.com/vitejs/vite" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#github-icon"></use>
-                </svg>
-                GitHub
-              </a>
-            </li>
-            <li>
-              <a href="https://chat.vite.dev/" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#discord-icon"></use>
-                </svg>
-                Discord
-              </a>
-            </li>
-            <li>
-              <a href="https://x.com/vite_js" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#x-icon"></use>
-                </svg>
-                X.com
-              </a>
-            </li>
-            <li>
-              <a href="https://bsky.app/profile/vite.dev" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#bluesky-icon"></use>
-                </svg>
-                Bluesky
-              </a>
-            </li>
-          </ul>
-        </div>
-      </section>
-
-      <div className="ticks"></div>
-      <section id="spacer"></section>
-    </>
+function toHistory(messages: Msg[]): ApiTurn[] {
+  return messages.flatMap((m) =>
+    m.kind === 'scene' ? [] : [{ role: m.kind === 'user' ? 'user' : 'assistant', content: m.text } as ApiTurn],
   )
 }
 
-export default App
+export default function App() {
+  const [state, setState] = useState<GameState>(() => createState())
+  const [messages, setMessages] = useState<Msg[]>(() => openScene(createState()))
+  const [pending, setPending] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [emotion, setEmotion] = useState(() => SCENES[1].openingEmotion)
+  const [lastDelta, setLastDelta] = useState<number | null>(null)
+
+  function reset(next: GameState) {
+    setState(next)
+    setMessages(openScene(next))
+    setEmotion(SCENES[next.scene].openingEmotion)
+    setLastDelta(null)
+    setError(null)
+  }
+
+  async function send(text: string) {
+    const history = toHistory(messages)
+    setMessages((prev) => [...prev, { kind: 'user', text }])
+    setPending(true)
+    setError(null)
+
+    // 위기 신호는 모델을 거치지 않는다. 사전에 작성한 문구로 답하고 상태를 움직이지 않는다.
+    if (looksLikeCrisis(text)) {
+      setMessages((prev) => [...prev, { kind: 'him', text: CRISIS_REPLY, emotion: '걱정' }])
+      setEmotion('걱정')
+      setLastDelta(null)
+      setPending(false)
+      return
+    }
+
+    try {
+      const raw = await sendTurn(state, history, text)
+      const { turn, ok } = parseTurn(raw)
+
+      // 폴백은 세션 지표다. 상태 전이 자체는 폴백값(delta 0)으로 그대로 진행한다.
+      const base = ok ? state : { ...state, fallbackCount: state.fallbackCount + 1 }
+      const next = applyTurn(base, turn)
+
+      const sceneChanged = next.scene !== state.scene && !next.ending
+      setMessages((prev) => {
+        const appended: Msg[] = [...prev, { kind: 'him', text: turn.dialogue, emotion: turn.emotion }]
+        return sceneChanged ? [...appended, ...openScene(next)] : appended
+      })
+      setState(next)
+      setEmotion(sceneChanged ? SCENES[next.scene].openingEmotion : turn.emotion)
+      setLastDelta(next.affection - state.affection)
+    } catch (err) {
+      // 실패한 턴은 상태를 움직이지 않는다. 유저 발화만 남기고 다시 보내게 한다.
+      setError(err instanceof ChatError ? err.message : '알 수 없는 문제가 생겼어요.')
+    } finally {
+      setPending(false)
+    }
+  }
+
+  return (
+    <div className="app">
+      {state.ending ? (
+        <EndingView
+          kind={state.ending}
+          state={state}
+          onRegress={() => reset(nextRun(state))}
+          onRestart={() => reset(createState())}
+        />
+      ) : (
+        <>
+          <StatusBar state={state} emotion={emotion} lastDelta={lastDelta} />
+          <ChatLog messages={messages} pending={pending} error={error} />
+          <Composer disabled={pending} onSend={(t) => void send(t)} />
+        </>
+      )}
+      <footer className="notice">
+        이 대화 상대는 AI입니다. 실존 인물이 아닙니다.
+      </footer>
+    </div>
+  )
+}
