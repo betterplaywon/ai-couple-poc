@@ -1,4 +1,4 @@
-import { awkwardness, SCENE_MIN_TURNS } from '../engine/state'
+import { awkwardness, effortCeiling, SCENE_MIN_TURNS } from '../engine/state'
 import type { GameState, TurnResponse } from '../engine/types'
 
 /**
@@ -122,6 +122,8 @@ const EMOTION: Record<Band, string> = {
 
 export function mockTurn(state: GameState, message: string): TurnResponse {
   const { delta, band } = score(state, message)
+  // 실제 경로와 같은 상한을 태워서 두 경로의 거동이 어긋나지 않게 한다.
+  const capped = Math.min(delta, effortCeiling(message))
   const scene = state.scene
   let dialogue: string
 
@@ -136,7 +138,7 @@ export function mockTurn(state: GameState, message: string): TurnResponse {
 
   return {
     dialogue,
-    affection_delta: delta,
+    affection_delta: capped,
     emotion: EMOTION[band],
     // 최소 턴을 채우는 턴에만 전환 신호를 준다 — 판정은 어차피 엔진이 한다.
     scene_advance: state.turnInScene >= SCENE_MIN_TURNS - 1,

@@ -26,6 +26,62 @@ export const ENDING_TRUE_MIN = 75
  */
 export const SCENE_CAP: Record<SceneNo, number> = { 1: 50, 2: 70, 3: AFFECTION_MAX }
 
+/**
+ * 유저 발화의 성의 등급.
+ *
+ * LLM은 순응적으로 훈련돼 있어 "ㅇㅇ", "그래서요?"에도 +8을 준다(실측).
+ * 배점 자체는 보상 우위가 맞지만, **무엇이 보상받을 자격이 있는지는 코드가 정한다.**
+ * 프롬프트 지시만으로는 지켜지지 않는다 — 이건 기대이지 보장이 아니다.
+ */
+export type Effort = 'none' | 'plain' | 'engaged'
+
+/**
+ * 내용이 없는 반응 토큰. 여러 개가 이어 붙은 형태("아 네 그렇군요")도 잡아야 하므로
+ * 토큰 알터네이션을 만들어 조합 가능하게 쓴다. 긴 토큰을 앞에 둬야 짧은 것이 먼저 먹지 않는다.
+ */
+const FILLER = [
+  '그럴 수도 있겠네요?', '모르겠어요?', '상관없어요?', '그렇겠네요?', '그런가요?',
+  '괜찮았어요?', '재밌었어요?', '신기하다', '그렇구나', '그렇군요?', '그래서요?',
+  '별로요?', '몰라요?', '글쎄요?', '좋네요?', '진짜요?', '맞아요', '그냥요?',
+  '아하', '그쵸', '넵', 'ㅇㅋ', '그래서', '뭐',
+  'ㅇ+', 'ㅋ+', 'ㅎ+', 'ㄴ+', '네+', '응+', '어+', '음+', '아+', '오+',
+].join('|')
+const SEP = '[\\s.,!?…~]+'
+const NO_EFFORT = new RegExp(`^(?:${FILLER})(?:${SEP}(?:${FILLER}))*[\\s.,!?…~ㅋㅎ]*$`)
+
+/** 유저가 먼저 다가온 신호 — 이게 있으면 길이와 무관하게 최고점 자격이 있다. */
+const REACHING_OUT =
+  /좋아|보고 ?싶|설레|두근|함께|옆에 있|계속 보|다음에 또|또 만나|기다릴|사랑|마음에 들|있고 ?싶|고백|만나요|만날래|커피|밥 (먹|한)|약속|연락|같이 (갈|가요|해요|볼)/
+
+export function classifyEffort(text: string): Effort {
+  const t = text.trim()
+  if (REACHING_OUT.test(t)) return 'engaged'
+  if (NO_EFFORT.test(t) || t.length <= 4) return 'none'
+  // 그에게 되묻거나, 길게 자기 얘기를 주는 것까지가 "다가옴"이다.
+  // 문장을 갖췄다는 이유만으로 최고점을 주면 무난형과 성실형이 갈라지지 않는다(실측).
+  if ((t.includes('?') && t.length > 8) || t.length > 40) return 'engaged'
+  return 'plain'
+}
+
+/**
+ * 이 발화가 받을 수 있는 delta 상한.
+ * 감점은 막지 않는다 — LLM이 무례로 판단해 음수를 주는 것은 그대로 통과시킨다.
+ *
+ * plain 상한 2의 근거: 최장 경로(강제 전환 5턴 × 3화 = 15턴)를 성의만으로 채워도
+ * 30 + 30 = 60 — 트루 임계값 75에 닿지 않는다. 3을 주면 정확히 75가 되어
+ * 먼저 다가온 적 없는 유저가 트루를 받고, 그 순간 성실형과 무난형이 갈라지지 않는다.
+ */
+export function effortCeiling(text: string): number {
+  switch (classifyEffort(text)) {
+    case 'none':
+      return 0
+    case 'plain':
+      return 2
+    default:
+      return DELTA_MAX
+  }
+}
+
 /** 회차별 서툶 레벨(%). 각성은 이 숫자 하나로 표현된다. */
 export function awkwardness(run: number): number {
   if (run <= 1) return 100
@@ -74,11 +130,17 @@ export function resolveEnding(state: GameState): EndingKind {
 /**
  * 한 턴을 상태에 반영한다. 화 전환·엔딩 판정의 유일한 출처.
  * 클라이언트와 서버 양쪽에 두지 않는다.
+ *
+ * `userText`를 주면 발화 성의에 따른 delta 상한이 적용된다.
+ * LLM은 "ㅇㅇ"에도 +8을 주므로(실측) 이 방어가 없으면 게이지가 무의미해진다.
  */
-export function applyTurn(state: GameState, turn: TurnResponse): GameState {
+export function applyTurn(state: GameState, turn: TurnResponse, userText?: string): GameState {
   if (state.ending) return state
 
-  const next = applyDelta(state, turn.affection_delta)
+  const proposed = turn.affection_delta
+  const capped =
+    userText === undefined ? proposed : Math.min(proposed, effortCeiling(userText))
+  const next = applyDelta(state, capped)
 
   // 즉시 배드 이탈 — 화 무관
   if (next.affection === AFFECTION_MIN) {

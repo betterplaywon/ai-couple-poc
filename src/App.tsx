@@ -64,7 +64,7 @@ export default function App() {
 
       // 폴백은 세션 지표다. 상태 전이 자체는 폴백값(delta 0)으로 그대로 진행한다.
       const base = ok ? state : { ...state, fallbackCount: state.fallbackCount + 1 }
-      const next = applyTurn(base, turn)
+      const next = applyTurn(base, turn, text)
 
       const sceneChanged = next.scene !== state.scene && !next.ending
       setMessages((prev) => {
