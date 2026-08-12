@@ -32,6 +32,7 @@ export default function App() {
   const [error, setError] = useState<string | null>(null)
   const [emotion, setEmotion] = useState(() => SCENES[1].openingEmotion)
   const [lastDelta, setLastDelta] = useState<number | null>(null)
+  const [mock, setMock] = useState<string | null>(null)
 
   function reset(next: GameState) {
     setState(next)
@@ -57,8 +58,9 @@ export default function App() {
     }
 
     try {
-      const raw = await sendTurn(state, history, text)
-      const { turn, ok } = parseTurn(raw)
+      const reply = await sendTurn(state, history, text)
+      setMock(reply.mock)
+      const { turn, ok } = parseTurn(reply.raw)
 
       // 폴백은 세션 지표다. 상태 전이 자체는 폴백값(delta 0)으로 그대로 진행한다.
       const base = ok ? state : { ...state, fallbackCount: state.fallbackCount + 1 }
@@ -97,7 +99,9 @@ export default function App() {
         </>
       )}
       <footer className="notice">
-        이 대화 상대는 AI입니다. 실존 인물이 아닙니다.
+        {mock
+          ? '데모 모드 — 응답이 스크립트로 생성되고 있습니다 (Claude API 미연결). 실존 인물이 아닙니다.'
+          : '이 대화 상대는 AI입니다. 실존 인물이 아닙니다.'}
       </footer>
     </div>
   )

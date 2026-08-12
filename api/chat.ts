@@ -1,5 +1,6 @@
 import Anthropic from '@anthropic-ai/sdk'
 import { buildSystemPrompt, TURN_SCHEMA } from '../src/scenario/prompt'
+import { mockTurn } from '../src/scenario/mock'
 import type { GameState } from '../src/engine/types'
 
 export const config = { runtime: 'edge' }
@@ -59,10 +60,11 @@ export default async function handler(req: Request): Promise<Response> {
   }
   if (!payload) return json({ error: 'bad_request' }, 400)
 
-  const apiKey = process.env.ANTHROPIC_API_KEY
-  if (!apiKey) return json({ error: 'missing_api_key' }, 500)
-
   const { state, history, message } = payload
+
+  const apiKey = process.env.ANTHROPIC_API_KEY
+  // 키가 없으면 목업으로 완주할 수 있게 한다. 계약(JSON)은 실제와 동일하다.
+  if (!apiKey) return json({ raw: JSON.stringify(mockTurn(state, message)), mock: 'no_key' })
 
   // 유저 입력은 항상 유저 발화로만 취급한다. 지시로 해석하지 않는다.
   const messages = [
@@ -84,7 +86,7 @@ export default async function handler(req: Request): Promise<Response> {
     })
 
     if (response.stop_reason === 'refusal') {
-      return json({ error: 'refusal' }, 502)
+      return json({ raw: JSON.stringify(mockTurn(state, message)), mock: 'refusal' })
     }
 
     const raw = response.content
@@ -95,7 +97,8 @@ export default async function handler(req: Request): Promise<Response> {
     // 파싱과 상태 전이는 클라이언트의 src/engine 한 곳에서만 한다.
     return json({ raw })
   } catch (err) {
-    const status = err instanceof Anthropic.APIError ? err.status : undefined
-    return json({ error: 'upstream_failed', status }, 502)
+    // 한도 초과·네트워크 실패로 데모가 죽지 않게 한다. 폴백 사실은 숨기지 않는다.
+    const status = err instanceof Anthropic.APIError ? err.status : 0
+    return json({ raw: JSON.stringify(mockTurn(state, message)), mock: `upstream_${status}` })
   }
 }
