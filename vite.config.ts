@@ -42,7 +42,8 @@ function apiDev(): Plugin {
 // https://vite.dev/config/
 export default defineConfig(({ mode }) => {
   // 서버리스 함수는 process.env를 읽는다. 개발 서버에서도 같은 소스를 쓴다.
-  Object.assign(process.env, loadEnv(mode, process.cwd(), 'ANTHROPIC_'))
+  // 접두사 허용목록 — 클라이언트 번들에는 어차피 주입되지 않는다(VITE_ 접두사가 아님).
+  Object.assign(process.env, loadEnv(mode, process.cwd(), ['GEMINI_', 'ANTHROPIC_']))
 
   return {
     plugins: [react(), babel({ presets: [reactCompilerPreset()] }), apiDev()],

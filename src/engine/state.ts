@@ -4,16 +4,27 @@ export const AFFECTION_START = 30
 export const AFFECTION_MIN = 0
 export const AFFECTION_MAX = 100
 
-/** 비대칭 — 잃기는 여전히 더 쉽다. 상한은 체류·보상 체감을 위해 +4로 올렸다 */
-export const DELTA_MIN = -5
-export const DELTA_MAX = 4
+/**
+ * 보상 우위 — 얻기가 잃기보다 크다. 체류와 상승 체감을 위한 의도된 선택이다.
+ * (초기 설계는 -5~+3의 리스크 우위였다. 근거는 docs/03-tradeoffs.md #19)
+ */
+export const DELTA_MIN = -2
+export const DELTA_MAX = 8
 
-export const SCENE_MIN_TURNS = 7
-export const SCENE_MAX_TURNS = 8
+/** 화당 4턴, 총 12턴. 짧아야 회귀가 가능하다. */
+export const SCENE_MIN_TURNS = 4
+export const SCENE_MAX_TURNS = 5
 export const LAST_SCENE = 3
 
 export const ENDING_BAD_MAX = 40
 export const ENDING_TRUE_MIN = 75
+
+/**
+ * 화별 호감도 천장.
+ * 이게 없으면 1~2화에서 트루가 확정되고 3화 구조가 판정상 무의미해진다.
+ * 2화 상한(70)이 트루 임계값(75)보다 낮은 것이 핵심 — 트루는 3화에서만 열린다.
+ */
+export const SCENE_CAP: Record<SceneNo, number> = { 1: 50, 2: 70, 3: AFFECTION_MAX }
 
 /** 회차별 서툶 레벨(%). 각성은 이 숫자 하나로 표현된다. */
 export function awkwardness(run: number): number {
@@ -37,13 +48,13 @@ function clamp(n: number, min: number, max: number): number {
   return Math.min(max, Math.max(min, n))
 }
 
-/** LLM이 준 delta는 신뢰하지 않는다. 범위를 클램프한 뒤 누적한다. */
+/** LLM이 준 delta는 신뢰하지 않는다. 범위를 클램프하고, 화별 천장까지 눌러서 누적한다. */
 export function applyDelta(state: GameState, delta: number): GameState {
   const safe = Number.isFinite(delta) ? Math.round(delta) : 0
   const clamped = clamp(safe, DELTA_MIN, DELTA_MAX)
   return {
     ...state,
-    affection: clamp(state.affection + clamped, AFFECTION_MIN, AFFECTION_MAX),
+    affection: clamp(state.affection + clamped, AFFECTION_MIN, SCENE_CAP[state.scene]),
   }
 }
 

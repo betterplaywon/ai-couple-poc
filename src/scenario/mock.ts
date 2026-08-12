@@ -26,18 +26,18 @@ function score(state: GameState, text: string): { delta: number; band: Band } {
   const t = text.trim()
   const bonus = awkwardness(state.run) < 100 ? 1 : 0 // 회차 보상
 
-  if (RUDE.test(t)) return { delta: -4, band: 'hurt' }
-  if (LOW_EFFORT.test(t) || t.length <= 3) return { delta: -2, band: 'cold' }
-  // 3화의 직진을 농담으로 받아넘기면 크게 상한다
-  if (state.scene === 3 && DEFLECT.test(t) && t.length < 20) return { delta: -3, band: 'hurt' }
-  if (DEFLECT.test(t) && t.length < 12) return { delta: -1, band: 'cold' }
+  if (RUDE.test(t)) return { delta: -2, band: 'hurt' }
+  if (state.scene === 3 && DEFLECT.test(t) && t.length < 20) return { delta: -2, band: 'hurt' }
+  // 무성의는 깎지 않는다. 올려주지 않는 것으로 충분하다.
+  if (LOW_EFFORT.test(t) || t.length <= 3) return { delta: 0, band: 'cold' }
+  if (DEFLECT.test(t) && t.length < 12) return { delta: 0, band: 'cold' }
 
-  // 게이지가 포화되면 판별력이 죽는다. 최고점은 "먼저 다가온" 발화에만 준다.
-  if (AFFECTION.test(t)) return { delta: Math.min(4, 4 + bonus), band: 'warm' }
-  if (PROPOSAL.test(t)) return { delta: Math.min(4, 3 + bonus), band: 'warm' }
-  if (SELF_DISCLOSURE.test(t) && t.length > 20) return { delta: Math.min(4, 3 + bonus), band: 'good' }
-  if (t.includes('?') && t.length > 14) return { delta: Math.min(4, 2 + bonus), band: 'good' }
-  if (t.length > 12) return { delta: Math.min(3, 1 + bonus), band: 'good' }
+  // 최고점은 "먼저 다가온" 발화에만 준다.
+  if (AFFECTION.test(t)) return { delta: Math.min(8, 8 + bonus), band: 'warm' }
+  if (PROPOSAL.test(t)) return { delta: Math.min(8, 7 + bonus), band: 'warm' }
+  if (SELF_DISCLOSURE.test(t) && t.length > 20) return { delta: Math.min(8, 5 + bonus), band: 'good' }
+  if (t.includes('?') && t.length > 14) return { delta: Math.min(8, 4 + bonus), band: 'good' }
+  if (t.length > 12) return { delta: Math.min(8, 3 + bonus), band: 'good' }
   return { delta: 1, band: 'flat' }
 }
 
@@ -100,7 +100,7 @@ const LINES: Record<1 | 2 | 3, Record<Band, string[]>> = {
   },
 }
 
-/** 화마다 한 번, 그가 서툴게 용기를 내는 순간 (turnInScene 3에 고정) */
+/** 화마다 한 번, 그가 서툴게 용기를 내는 순간 (화당 4턴이므로 3번째 턴에 고정) */
 const COURAGE: Record<1 | 2 | 3, string> = {
   1: '저기.\n\n...다음 모임에도, 오시죠?\n아니 뭐, 안 오셔도 되는데.',
   2: '이거...\n저번에 말씀하신 거 같아서요.\n\n부담스러우면 안 받으셔도 돼요.',
@@ -125,9 +125,9 @@ export function mockTurn(state: GameState, message: string): TurnResponse {
   const scene = state.scene
   let dialogue: string
 
-  if (state.run >= 2 && scene === 1 && state.turnInScene === 4) {
+  if (state.run >= 2 && scene === 1 && state.turnInScene === 1) {
     dialogue = AWAKENING_LINE[state.run >= 3 ? 3 : 2]
-  } else if (state.turnInScene === 3 && band !== 'hurt') {
+  } else if (state.turnInScene === 2 && band !== 'hurt') {
     dialogue = COURAGE[scene]
   } else {
     const pool = LINES[scene][band]

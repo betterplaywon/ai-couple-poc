@@ -29,26 +29,26 @@ describe('applyDelta — 클램프 후 누적', () => {
     expect(createState().affection).toBe(30)
   })
 
-  it('delta 상한 +4를 넘겨도 +4만 오른다', () => {
-    expect(applyDelta(stateAt(), 99).affection).toBe(34)
+  it('delta 상한 +8을 넘겨도 +8만 오른다', () => {
+    expect(applyDelta(stateAt(), 99).affection).toBe(38)
   })
 
-  it('상한(+4)보다 하한(-5)이 여전히 크다 — 비대칭은 유지된다', () => {
+  it('delta 하한 -2를 넘겨도 -2만 내린다', () => {
+    expect(applyDelta(stateAt(), -99).affection).toBe(28)
+  })
+
+  it('보상 우위 — 한 턴에 얻는 최대치가 잃는 최대치보다 크다', () => {
     const up = applyDelta(stateAt(), 99).affection - 30
     const down = 30 - applyDelta(stateAt(), -99).affection
-    expect(down).toBeGreaterThan(up)
-  })
-
-  it('delta 하한 -5를 넘겨도 -5만 내린다', () => {
-    expect(applyDelta(stateAt(), -99).affection).toBe(25)
+    expect(up).toBeGreaterThan(down)
   })
 
   it('호감도는 0 아래로 내려가지 않는다', () => {
-    expect(applyDelta(stateAt({ affection: 2 }), -5).affection).toBe(0)
+    expect(applyDelta(stateAt({ affection: 1 }), -2).affection).toBe(0)
   })
 
   it('호감도는 100을 넘지 않는다', () => {
-    expect(applyDelta(stateAt({ affection: 99 }), 3).affection).toBe(100)
+    expect(applyDelta(stateAt({ scene: 3, affection: 99 }), 8).affection).toBe(100)
   })
 
   it('NaN·undefined는 0으로 취급한다', () => {
@@ -57,25 +57,42 @@ describe('applyDelta — 클램프 후 누적', () => {
   })
 })
 
-describe('resolveScene — 화 전환', () => {
-  it('5턴에서는 신호가 와도 전환하지 않는다', () => {
-    expect(resolveScene(stateAt({ turnInScene: 5 }), true)).toBe(false)
+describe('resolveScene — 화 전환 (화당 4턴)', () => {
+  it('3턴에서는 신호가 와도 전환하지 않는다', () => {
+    expect(resolveScene(stateAt({ turnInScene: 3 }), true)).toBe(false)
   })
 
-  it('6턴에서는 신호가 와도 전환하지 않는다 (최소 7턴)', () => {
-    expect(resolveScene(stateAt({ turnInScene: 6 }), true)).toBe(false)
+  it('4턴 + 신호면 전환한다', () => {
+    expect(resolveScene(stateAt({ turnInScene: 4 }), true)).toBe(true)
   })
 
-  it('7턴 + 신호면 전환한다', () => {
-    expect(resolveScene(stateAt({ turnInScene: 7 }), true)).toBe(true)
+  it('4턴이어도 신호가 없으면 전환하지 않는다', () => {
+    expect(resolveScene(stateAt({ turnInScene: 4 }), false)).toBe(false)
   })
 
-  it('7턴이어도 신호가 없으면 전환하지 않는다', () => {
-    expect(resolveScene(stateAt({ turnInScene: 7 }), false)).toBe(false)
+  it('5턴이면 신호 없이도 전환한다', () => {
+    expect(resolveScene(stateAt({ turnInScene: 5 }), false)).toBe(true)
+  })
+})
+
+describe('SCENE_CAP — 화별 천장', () => {
+  it('1화는 아무리 잘해도 50을 넘지 않는다', () => {
+    let s = stateAt()
+    for (let i = 0; i < 10; i += 1) s = applyDelta(s, 8)
+    expect(s.affection).toBe(50)
   })
 
-  it('8턴이면 신호 없이도 전환한다', () => {
-    expect(resolveScene(stateAt({ turnInScene: 8 }), false)).toBe(true)
+  it('2화 천장(70)은 트루 임계값(75)보다 낮다 — 트루는 3화에서만 열린다', () => {
+    let s = stateAt({ scene: 2, affection: 50 })
+    for (let i = 0; i < 10; i += 1) s = applyDelta(s, 8)
+    expect(s.affection).toBe(70)
+    expect(resolveEnding(s)).toBe('normal')
+  })
+
+  it('3화에서만 트루에 닿을 수 있다', () => {
+    let s = stateAt({ scene: 3, affection: 70 })
+    for (let i = 0; i < 3; i += 1) s = applyDelta(s, 8)
+    expect(resolveEnding(s)).toBe('true')
   })
 })
 
@@ -100,18 +117,18 @@ describe('applyTurn — 진행 판정', () => {
   })
 
   it('호감도 0이면 화 무관 즉시 배드로 이탈한다', () => {
-    const next = applyTurn(stateAt({ scene: 1, affection: 3 }), turn({ affection_delta: -5 }))
+    const next = applyTurn(stateAt({ scene: 1, affection: 2 }), turn({ affection_delta: -2 }))
     expect(next).toMatchObject({ affection: 0, ending: 'bad' })
   })
 
   it('전환 시 다음 화로 넘어가고 턴 수가 0으로 초기화된다', () => {
-    const next = applyTurn(stateAt({ turnInScene: 6 }), turn({ scene_advance: true }))
+    const next = applyTurn(stateAt({ turnInScene: 3 }), turn({ scene_advance: true }))
     expect(next).toMatchObject({ scene: 2, turnInScene: 0 })
   })
 
   it('3화에서 전환 조건을 만족하면 엔딩으로 간다', () => {
     const next = applyTurn(
-      stateAt({ scene: 3, turnInScene: 7, affection: 74 }),
+      stateAt({ scene: 3, turnInScene: 4, affection: 74 }),
       turn({ scene_advance: true }),
     )
     expect(next).toMatchObject({ scene: 3, ending: 'normal' })
@@ -119,7 +136,7 @@ describe('applyTurn — 진행 판정', () => {
 
   it('3화 마지막 턴의 delta가 엔딩 분기에 반영된다 (74 → +1 → true 아님, normal)', () => {
     const next = applyTurn(
-      stateAt({ scene: 3, turnInScene: 7, affection: 74 }),
+      stateAt({ scene: 3, turnInScene: 4, affection: 74 }),
       turn({ affection_delta: 1, scene_advance: true }),
     )
     expect(next.affection).toBe(75)
@@ -131,25 +148,25 @@ describe('applyTurn — 진행 판정', () => {
     expect(applyTurn(ended, turn({ affection_delta: 3 }))).toBe(ended)
   })
 
-  it('LLM이 매턴 전환 신호를 줘도 화당 최소 7턴은 보장된다', () => {
+  it('LLM이 매턴 전환 신호를 줘도 화당 최소 4턴은 보장된다', () => {
     let s = stateAt()
-    for (let i = 0; i < 6; i += 1) s = applyTurn(s, turn({ scene_advance: true }))
+    for (let i = 0; i < 3; i += 1) s = applyTurn(s, turn({ scene_advance: true }))
     expect(s.scene).toBe(1)
     s = applyTurn(s, turn({ scene_advance: true }))
     expect(s.scene).toBe(2)
     expect(s.turnInScene).toBe(0)
   })
 
-  it('전환 신호를 매턴 줘도 최소 21턴은 걸린다 (7×3)', () => {
+  it('전환 신호를 매턴 줘도 최소 12턴은 걸린다 (4×3)', () => {
     let s = stateAt()
     let n = 0
     while (!s.ending && n < 40) { s = applyTurn(s, turn({ scene_advance: true })); n += 1 }
-    expect(n).toBe(21)
+    expect(n).toBe(12)
   })
 
-  it('신호가 한 번도 없어도 3화 × 8턴 = 24턴이면 반드시 끝난다', () => {
+  it('신호가 한 번도 없어도 3화 × 5턴 = 15턴이면 반드시 끝난다', () => {
     let s = stateAt()
-    for (let i = 0; i < 24; i += 1) s = applyTurn(s, turn())
+    for (let i = 0; i < 15; i += 1) s = applyTurn(s, turn())
     expect(s.ending).toBe('bad')
   })
 })

@@ -1,11 +1,11 @@
-import Anthropic from '@anthropic-ai/sdk'
+import { GoogleGenAI, ThinkingLevel } from '@google/genai'
 import { buildSystemPrompt, TURN_SCHEMA } from '../src/scenario/prompt'
 import { mockTurn } from '../src/scenario/mock'
 import type { GameState } from '../src/engine/types'
 
 export const config = { runtime: 'edge' }
 
-const MODEL = 'claude-sonnet-5'
+const MODEL = process.env.GEMINI_MODEL ?? 'gemini-3.5-flash-lite'
 const MAX_TOKENS = 1024
 /** 화당 8턴 × 3화 = 24턴. 넉넉히 잡되 무한 이력은 막는다. */
 const MAX_HISTORY = 48
@@ -62,43 +62,44 @@ export default async function handler(req: Request): Promise<Response> {
 
   const { state, history, message } = payload
 
-  const apiKey = process.env.ANTHROPIC_API_KEY
+  const apiKey = process.env.GEMINI_API_KEY
   // 키가 없으면 목업으로 완주할 수 있게 한다. 계약(JSON)은 실제와 동일하다.
   if (!apiKey) return json({ raw: JSON.stringify(mockTurn(state, message)), mock: 'no_key' })
 
   // 유저 입력은 항상 유저 발화로만 취급한다. 지시로 해석하지 않는다.
-  const messages = [
-    ...history.map((t) => ({ role: t.role, content: t.content })),
-    { role: 'user' as const, content: message },
+  const contents = [
+    ...history.map((t) => ({
+      role: t.role === 'assistant' ? 'model' : 'user',
+      parts: [{ text: t.content }],
+    })),
+    { role: 'user', parts: [{ text: message }] },
   ]
 
   try {
-    const response = await new Anthropic({ apiKey }).messages.create({
+    const response = await new GoogleGenAI({ apiKey }).models.generateContent({
       model: MODEL,
-      max_tokens: MAX_TOKENS,
-      system: buildSystemPrompt(state),
-      messages,
-      thinking: { type: 'disabled' },
-      output_config: {
-        effort: 'medium',
-        format: { type: 'json_schema', schema: TURN_SCHEMA },
+      contents,
+      config: {
+        systemInstruction: { parts: [{ text: buildSystemPrompt(state) }] },
+        maxOutputTokens: MAX_TOKENS,
+        responseMimeType: 'application/json',
+        responseJsonSchema: TURN_SCHEMA,
+        // 로맨스에서 3초 넘는 지연은 몰입을 깬다. 감점 판정은 얕은 판단이라 깊은 사고가 필요 없다.
+        // Gemini 3.x는 thinkingBudget을 거부한다(400). thinkingLevel을 써야 한다.
+        thinkingConfig: { thinkingLevel: ThinkingLevel.LOW },
       },
     })
 
-    if (response.stop_reason === 'refusal') {
-      return json({ raw: JSON.stringify(mockTurn(state, message)), mock: 'refusal' })
+    const raw = response.text
+    if (!raw?.trim()) {
+      return json({ raw: JSON.stringify(mockTurn(state, message)), mock: 'empty_response' })
     }
-
-    const raw = response.content
-      .filter((block) => block.type === 'text')
-      .map((block) => block.text)
-      .join('')
 
     // 파싱과 상태 전이는 클라이언트의 src/engine 한 곳에서만 한다.
     return json({ raw })
   } catch (err) {
     // 한도 초과·네트워크 실패로 데모가 죽지 않게 한다. 폴백 사실은 숨기지 않는다.
-    const status = err instanceof Anthropic.APIError ? err.status : 0
-    return json({ raw: JSON.stringify(mockTurn(state, message)), mock: `upstream_${status}` })
+    const reason = err instanceof Error ? err.message.slice(0, 80) : 'unknown'
+    return json({ raw: JSON.stringify(mockTurn(state, message)), mock: 'upstream', reason })
   }
 }
