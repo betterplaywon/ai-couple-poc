@@ -88,7 +88,7 @@ export default function App() {
         <EndingView
           kind={state.ending}
           state={state}
-          onRegress={() => reset(nextRun(state))}
+          onRetry={() => reset(nextRun(state))}
           onRestart={() => reset(createState())}
         />
       ) : (

@@ -3,7 +3,7 @@ export type EndingKind = 'bad' | 'normal' | 'true'
 
 /** 관계 상태. 저장하지 않고 React 메모리에만 존재한다. */
 export type GameState = {
-  /** 회차. 1부터 시작하고 배드엔딩마다 +1 */
+  /** 시도 횟수. 1부터 시작하고 배드엔딩마다 +1 */
   run: number
   scene: SceneNo
   /** 현재 화에서 끝난 턴 수 */

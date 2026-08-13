@@ -11,7 +11,7 @@ export const AFFECTION_MAX = 100
 export const DELTA_MIN = -2
 export const DELTA_MAX = 8
 
-/** 화당 4턴, 총 12턴. 짧아야 회귀가 가능하다. */
+/** 화당 4턴, 총 12턴. 짧아야 재도전이 가능하다. */
 export const SCENE_MIN_TURNS = 4
 export const SCENE_MAX_TURNS = 5
 export const LAST_SCENE = 3
@@ -82,7 +82,7 @@ export function effortCeiling(text: string): number {
   }
 }
 
-/** 회차별 서툶 레벨(%). 각성은 이 숫자 하나로 표현된다. */
+/** 시도별 서툶 레벨(%). 시도를 건너 누적되는 유일한 값이다. */
 export function awkwardness(run: number): number {
   if (run <= 1) return 100
   if (run === 2) return 85
@@ -160,7 +160,7 @@ export function applyTurn(state: GameState, turn: TurnResponse, userText?: strin
   }
 }
 
-/** 배드엔딩 → 1화 회귀. 회차와 폴백 카운터만 이월된다. */
+/** 배드엔딩 → 1화부터 재도전. 시도 횟수와 폴백 카운터만 이월된다. */
 export function nextRun(state: GameState): GameState {
   return { ...createState(state.run + 1), fallbackCount: state.fallbackCount }
 }

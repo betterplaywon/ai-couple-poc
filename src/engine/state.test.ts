@@ -171,8 +171,8 @@ describe('applyTurn — 진행 판정', () => {
   })
 })
 
-describe('nextRun — 회귀와 각성', () => {
-  it('회차가 오르고 호감도·화·턴이 초기화된다', () => {
+describe('nextRun — 재도전과 익숙함 누적', () => {
+  it('시도 횟수가 오르고 호감도·화·턴이 초기화된다', () => {
     const dead = stateAt({ run: 1, scene: 3, turnInScene: 7, affection: 12, ending: 'bad' })
     expect(nextRun(dead)).toMatchObject({
       run: 2,
@@ -187,7 +187,7 @@ describe('nextRun — 회귀와 각성', () => {
     expect(nextRun(stateAt({ fallbackCount: 3 })).fallbackCount).toBe(3)
   })
 
-  it('서툶 레벨은 회차마다 내려가고 3회차에서 멈춘다', () => {
+  it('서툶 레벨은 시도마다 내려가고 3번째에서 멈춘다', () => {
     expect([1, 2, 3, 4].map(awkwardness)).toEqual([100, 85, 70, 70])
   })
 })

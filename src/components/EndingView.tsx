@@ -6,7 +6,7 @@ import type { EndingKind, GameState } from '../engine/types'
 type Props = {
   kind: EndingKind
   state: GameState
-  onRegress: () => void
+  onRetry: () => void
   onRestart: () => void
 }
 
@@ -16,7 +16,7 @@ const LABEL: Record<EndingKind, string> = {
   true: 'TRUE ENDING',
 }
 
-export function EndingView({ kind, state, onRegress, onRestart }: Props) {
+export function EndingView({ kind, state, onRetry, onRestart }: Props) {
   const [epilogue, setEpilogue] = useState(false)
   const ending = ENDINGS[kind]
   const isTrue = kind === 'true'
@@ -60,7 +60,7 @@ export function EndingView({ kind, state, onRegress, onRestart }: Props) {
 
       <div className="ending-foot" style={{ animationDelay: `${1 + ending.lines.length * 1.1}s` }}>
         <div className="ending-stats">
-          최종 호감도 {state.affection} · {state.run}회차
+          최종 호감도 {state.affection} · {state.run}번째 시도
         </div>
 
         {isTrue ? (
@@ -79,9 +79,9 @@ export function EndingView({ kind, state, onRegress, onRestart }: Props) {
           )
         ) : (
           <>
-            <button onClick={onRegress}>돌아간다</button>
+            <button onClick={onRetry}>다시 시작한다</button>
             <p className="ending-note">
-              다음 회차의 그는 {awkwardness(state.run + 1)}%만큼 서툴다.
+              호감도는 처음 값으로 돌아간다. 다만 다음 그는 {awkwardness(state.run + 1)}%만큼만 서툴다.
               <br />
               기억하지는 못한다. 다만 몸이 조금 기억한다.
             </p>

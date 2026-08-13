@@ -23,7 +23,7 @@ export function StatusBar({ state, emotion, lastDelta }: Props) {
       <div className="status-line">
         <span className="scene-no">{state.scene}화</span>
         <span className="scene-title">{scene.title}</span>
-        {state.run > 1 && <span className="run-badge">{state.run}회차</span>}
+        {state.run > 1 && <span className="run-badge">{state.run}번째 시도</span>}
       </div>
 
       <div className="gauge-row">

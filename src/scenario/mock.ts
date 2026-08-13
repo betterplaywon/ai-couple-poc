@@ -5,7 +5,7 @@ import type { GameState, TurnResponse } from '../engine/types'
  * API 키가 없거나 호출이 실패했을 때 쓰는 결정론적 대체 응답.
  *
  * 대사는 스크립트다 — 서사 품질 검증에는 쓸 수 없다.
- * 다만 호감도·감점·화 전환·엔딩·회귀는 실제와 **똑같은 계약**으로 돈다.
+ * 다만 호감도·감점·화 전환·엔딩·재도전은 실제와 **똑같은 계약**으로 돈다.
  * 목적은 "키 없이도 완주가 되는가"이지 "대사가 좋은가"가 아니다.
  */
 
@@ -24,7 +24,7 @@ type Band = 'warm' | 'good' | 'flat' | 'cold' | 'hurt'
 /** 유저 발화를 채점한다. 프롬프트 루브릭과 같은 기준을 규칙으로 옮긴 것이다. */
 function score(state: GameState, text: string): { delta: number; band: Band } {
   const t = text.trim()
-  const bonus = awkwardness(state.run) < 100 ? 1 : 0 // 회차 보상
+  const bonus = awkwardness(state.run) < 100 ? 1 : 0 // 재도전 보상
 
   if (RUDE.test(t)) return { delta: -2, band: 'hurt' }
   if (state.scene === 3 && DEFLECT.test(t) && t.length < 20) return { delta: -2, band: 'hurt' }
