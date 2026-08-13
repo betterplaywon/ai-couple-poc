@@ -1,5 +1,14 @@
 import { describe, expect, it } from 'vitest'
-import { applyTurn, classifyEffort, createState, DELTA_MAX, effortCeiling } from './state'
+import {
+  AFFECTION_START,
+  applyTurn,
+  classifyEffort,
+  createState,
+  DELTA_MAX,
+  DELTA_MIN,
+  effortCeiling,
+  effortFloor,
+} from './state'
 import type { TurnResponse } from './types'
 
 const turn = (delta: number): TurnResponse => ({
@@ -64,7 +73,7 @@ describe('applyTurn — 성의 상한이 LLM 제안값을 누른다', () => {
   })
 
   it('감점은 상한이 막지 않는다 — 무례는 그대로 통과', () => {
-    expect(applyTurn(createState(), turn(-2), 'ㅇㅇ').affection).toBe(28)
+    expect(applyTurn(createState(), turn(-2), '왜 그렇게 말을 더듬어요? 듣는 사람이 힘들잖아요.').affection).toBe(28)
   })
 
   it('userText를 안 주면 상한 없이 종전처럼 동작한다', () => {
@@ -84,5 +93,39 @@ describe('applyTurn — 성의 상한이 LLM 제안값을 누른다', () => {
     for (let i = 0; i < 15; i += 1) s = applyTurn(s, turn(8), 'ㅇㅇ')
     expect(s.affection).toBe(30)
     expect(s.ending).toBe('bad')
+  })
+})
+
+/**
+ * 2026-08-13 /playthrough 실측: 무성의형 15턴 중 6턴에서 LLM이 -2를 줘
+ * 최종 호감도가 18까지 내려갔다. 배점 원칙은 "무성의는 깎지 않는다"이다.
+ */
+describe('applyTurn — 성의 하한이 무성의 감점을 막는다', () => {
+  const none = ['ㅇㅇ', '네', '몰라요', '그래서요?', '아 네', 'ㅋㅋ', '그렇군요']
+  it.each(none)('"%s"에 LLM이 -2를 줘도 깎이지 않는다', (t) => {
+    expect(effortFloor(t)).toBe(0)
+    expect(applyTurn(createState(), turn(-2), t).affection).toBe(30)
+  })
+
+  it('무성의를 15턴 반복해도 시작값 그대로 배드다 — 0으로 떨어지지 않는다', () => {
+    let s = createState()
+    for (let i = 0; i < 15; i += 1) s = applyTurn(s, turn(-2), 'ㅇㅇ')
+    expect(s.affection).toBe(AFFECTION_START)
+    expect(s.ending).toBe('bad')
+  })
+
+  // 하한은 무성의에만 붙는다. 무례가 여기 걸리면 감점 장치 자체가 죽는다.
+  const rude = [
+    '연봉 얼마 벌어요? 사서면 별로 못 벌 것 같은데.',
+    '모쏠이라 그런가 진짜 답답하네요.',
+    '고백하는 데 3화나 걸렸네요. 한심하다.',
+  ]
+  it.each(rude)('"%s"는 하한이 DELTA_MIN이라 그대로 깎인다', (t) => {
+    expect(effortFloor(t)).toBe(DELTA_MIN)
+    expect(applyTurn(createState(), turn(-2), t).affection).toBe(28)
+  })
+
+  it('성의는 있으나 무례한 발화도 감점된다 (plain 구간)', () => {
+    expect(effortFloor('오늘은 생각보다 사람이 많았던 것 같네요')).toBe(DELTA_MIN)
   })
 })

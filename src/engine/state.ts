@@ -82,6 +82,23 @@ export function effortCeiling(text: string): number {
   }
 }
 
+/**
+ * 이 발화가 받을 수 있는 delta 하한.
+ *
+ * **무성의는 깎지 않는다**(배점 원칙). 무성의가 지는 벌은 "안 오르는 것"이고,
+ * 관계가 지는 리스크는 화별 천장·유한함·배드엔딩이 따로 진다.
+ *
+ * 프롬프트에 `0 : 성의 없는 답 — 깎지는 않되`라고 써 두어도 지켜지지 않는다.
+ * 2026-08-13 실측: 무성의형 15턴 중 6턴에 -2가 나와 최종 호감도가 18까지 내려갔다.
+ * 상한과 같은 이유로, 하한도 코드가 정한다.
+ *
+ * 무례는 여기서 걸리지 않는다 — 조롱·사적 침범은 none으로 분류되지 않으므로
+ * DELTA_MIN까지 그대로 통과한다.
+ */
+export function effortFloor(text: string): number {
+  return classifyEffort(text) === 'none' ? 0 : DELTA_MIN
+}
+
 /** 시도별 서툶 레벨(%). 시도를 건너 누적되는 유일한 값이다. */
 export function awkwardness(run: number): number {
   if (run <= 1) return 100
@@ -131,15 +148,17 @@ export function resolveEnding(state: GameState): EndingKind {
  * 한 턴을 상태에 반영한다. 화 전환·엔딩 판정의 유일한 출처.
  * 클라이언트와 서버 양쪽에 두지 않는다.
  *
- * `userText`를 주면 발화 성의에 따른 delta 상한이 적용된다.
- * LLM은 "ㅇㅇ"에도 +8을 주므로(실측) 이 방어가 없으면 게이지가 무의미해진다.
+ * `userText`를 주면 발화 성의에 따른 delta 상한·하한이 적용된다.
+ * LLM은 "ㅇㅇ"에 +8도 주고 -2도 주므로(실측) 이 방어가 없으면 게이지가 무의미해진다.
  */
 export function applyTurn(state: GameState, turn: TurnResponse, userText?: string): GameState {
   if (state.ending) return state
 
   const proposed = turn.affection_delta
   const capped =
-    userText === undefined ? proposed : Math.min(proposed, effortCeiling(userText))
+    userText === undefined
+      ? proposed
+      : clamp(proposed, effortFloor(userText), effortCeiling(userText))
   const next = applyDelta(state, capped)
 
   // 즉시 배드 이탈 — 화 무관
