@@ -31,9 +31,44 @@
 | M6 | 재도전 + 익숙함 누적 | 배드 → 1화 재시작, 2번째 기시감·3번째 자각이 실제로 드러남 | ✅ 완료 · 3연속 완주 실측 |
 | M7 | AI 고지 상시 노출 | 화면 하단 고정 | ✅ 완료 (엔딩 화면 포함) |
 | M11 | **런타임 LLM을 Claude로 복귀** | `ANTHROPIC_API_KEY`로 완주 1회 + 델타 분포가 Gemini와 유사 | ✅ 코드 완료 · 실호출 확인 |
-| M8 | Vercel 배포 | 접속 링크 확보 (인프라 작업은 하지 않음) | 미착수 |
-| M9 | `transcripts/` 커밋 | `uvx claude-code-transcripts`, gitignore에 안 걸림 | 미착수 |
-| M10 | README 500자 소개 | 링크 포함 | 초안 작성 (링크 미삽입) |
+| M8 | Vercel 배포 | 접속 링크 확보 (인프라 작업은 하지 않음) | ⏳ GitHub 푸시 완료 · **대시보드 import 대기** |
+| M9 | `transcripts/` 커밋 | 세션 6개 HTML 변환, gitignore에 안 걸림 | ✅ 완료 (공개 전 정리 포함) |
+| M10 | README 500자 소개 | 링크 포함 | ⏳ 소개 완료 · **링크 미삽입 (M8 대기)** |
+
+### M8 — 배포 절차 (남은 것)
+
+저장소는 `betterplaywon/ai-couple-poc`에 푸시돼 있다. 남은 것은 대시보드 한 번이다.
+
+1. [vercel.com/new](https://vercel.com/new) → 이 저장소 import
+2. Framework Preset은 **Vite**로 자동 감지된다. 빌드 설정은 기본값 그대로 둔다
+3. **Environment Variables에 `ANTHROPIC_API_KEY`를 넣는다** — 이것만 잊지 않으면 된다
+4. Deploy
+
+> ⚠️ 키를 안 넣어도 **배포는 성공하고 앱도 뜬다.** 대신 전 턴이 목업으로 돌아
+> 대사가 스크립트가 된다. 배포 직후 화면 하단에 `데모 모드` 문구가 뜨는지 눈으로 확인한다.
+> 문구가 보이면 키가 안 걸린 것이다.
+
+배포 후 확인할 것 (프로덕션에서 처음 도는 경로다):
+- `api/chat.ts`가 서버리스 함수로 잡혔는가 (`/api/chat`에 POST해서 200이 오는가)
+- edge 런타임에서 `@anthropic-ai/sdk`가 도는가
+- `api/`가 `../src/`를 import하는 구조가 Vercel 번들러에서 풀리는가
+
+셋 다 로컬 dev 어댑터([#10](03-tradeoffs.md))로만 검증했고 **프로덕션에서는 아직 안 돌려봤다.**
+
+### 공개 전 조치 기록 (2026-08-13)
+
+저장소가 public이라 푸시 전에 감사했다.
+
+| 항목 | 결과 |
+|---|---|
+| API 키 (sk-ant / AIza / gho_ / JWT / AWS / PEM) | 히스토리·워킹트리 0건 |
+| `.env*` · `settings.local.json` 추적 | 0건 (gitignore 정상) |
+| 하이재킹 표면 (postinstall, 커밋된 훅) | 없음 |
+| 커밋 메타데이터 실메일 | GitHub noreply로 **24개 커밋 전체 재작성** |
+| transcripts 내 로컬 절대경로·사용자명 | 마스킹 |
+
+> 정리 이전 blob이 히스토리에 남으면 후속 커밋으로 덮어도 소용없다.
+> 그래서 변환·정리를 **한 커밋으로 합쳐서** 원본이 히스토리에 들어가지 않게 했다.
 
 ### M11 — Claude 복귀 (2026-08-13 완료)
 
