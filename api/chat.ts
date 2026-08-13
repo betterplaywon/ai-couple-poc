@@ -1,7 +1,7 @@
 import Anthropic from '@anthropic-ai/sdk'
-import { buildSystemPrompt, TURN_SCHEMA } from '../src/scenario/prompt'
-import { mockTurn } from '../src/scenario/mock'
-import type { GameState } from '../src/engine/types'
+import { buildSystemPrompt, TURN_SCHEMA } from '../src/scenario/prompt.js'
+import { mockTurn } from '../src/scenario/mock.js'
+import type { GameState } from '../src/engine/types.js'
 
 /**
  * 런타임은 **Node.js**다 (Vercel 기본값이라 선언하지 않는다).
@@ -12,6 +12,12 @@ import type { GameState } from '../src/engine/types'
  * (2026-08-13 실측: "Edge Function api/chat is referencing unsupported modules")
  *
  * 이 제품에서 지연을 지배하는 건 LLM 호출(초 단위)이라 edge의 콜드스타트 이점은 무의미하다.
+ *
+ * **상대 경로 import에는 `.js` 확장자를 붙인다.** package.json이 `"type": "module"`이라
+ * Vercel이 컴파일한 함수는 ESM으로 실행되고, ESM Node는 확장자를 생략한 상대 경로를 해석하지 못한다.
+ * 빌드는 통과하고 콜드스타트에서만 죽는다 — `ERR_MODULE_NOT_FOUND` → FUNCTION_INVOCATION_FAILED,
+ * 클라이언트에는 그냥 500으로 보인다. (2026-08-13 실측)
+ * 여기서 타고 들어가는 `src/scenario/*`·`src/engine/*`도 같은 규칙을 지켜야 한다.
  */
 const MODEL = process.env.ANTHROPIC_MODEL ?? 'claude-haiku-4-5'
 const MAX_TOKENS = 1024

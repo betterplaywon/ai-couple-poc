@@ -1,4 +1,4 @@
-import type { EndingKind, GameState } from '../engine/types'
+import type { EndingKind, GameState } from '../engine/types.js'
 
 export type Ending = {
   title: string

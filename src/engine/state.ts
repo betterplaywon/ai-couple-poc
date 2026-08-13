@@ -1,4 +1,4 @@
-import type { EndingKind, GameState, SceneNo, TurnResponse } from './types'
+import type { EndingKind, GameState, SceneNo, TurnResponse } from './types.js'
 
 export const AFFECTION_START = 30
 export const AFFECTION_MIN = 0

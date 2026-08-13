@@ -1,4 +1,4 @@
-import type { SceneNo } from '../engine/types'
+import type { SceneNo } from '../engine/types.js'
 
 export type Scene = {
   title: string

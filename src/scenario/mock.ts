@@ -1,5 +1,5 @@
-import { awkwardness, effortCeiling, SCENE_MIN_TURNS } from '../engine/state'
-import type { GameState, TurnResponse } from '../engine/types'
+import { awkwardness, effortCeiling, SCENE_MIN_TURNS } from '../engine/state.js'
+import type { GameState, TurnResponse } from '../engine/types.js'
 
 /**
  * API 키가 없거나 호출이 실패했을 때 쓰는 결정론적 대체 응답.

@@ -1,9 +1,9 @@
-import { awkwardness, DELTA_MAX, DELTA_MIN, SCENE_MAX_TURNS, SCENE_MIN_TURNS } from '../engine/state'
-import type { GameState } from '../engine/types'
-import { CHARACTER_CARD } from './character'
-import { awakeningCue, awakeningFor } from './endings'
-import { SAFETY_RULES } from './safety'
-import { SCENES } from './scenes'
+import { awkwardness, DELTA_MAX, DELTA_MIN, SCENE_MAX_TURNS, SCENE_MIN_TURNS } from '../engine/state.js'
+import type { GameState } from '../engine/types.js'
+import { CHARACTER_CARD } from './character.js'
+import { awakeningCue, awakeningFor } from './endings.js'
+import { SAFETY_RULES } from './safety.js'
+import { SCENES } from './scenes.js'
 
 /**
  * 호감도 구간별 거리감. 숫자를 알려줘도 연기가 안 붙으면 게이지가 거짓말이 된다.

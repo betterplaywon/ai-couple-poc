@@ -23,12 +23,10 @@ export async function sendTurn(
     throw new ChatError('연결이 끊겼어요. 잠시 뒤 다시 보내주세요.')
   }
 
+  // 상태 코드로 원인을 단정하지 않는다. 키가 없으면 서버가 목업으로 200을 주므로
+  // 500은 함수 자체가 죽었다는 뜻이고, 그 이유는 배포 로그에만 있다.
   if (!res.ok) {
-    throw new ChatError(
-      res.status === 500
-        ? '서버 설정이 아직이에요. (ANTHROPIC_API_KEY)'
-        : '답장이 오다가 멈췄어요. 다시 보내주세요.',
-    )
+    throw new ChatError(`답장이 오다가 멈췄어요. 다시 보내주세요. (${res.status})`)
   }
 
   const body = (await res.json().catch(() => null)) as { raw?: unknown; mock?: unknown } | null

@@ -1,4 +1,4 @@
-import { CHARACTER_NAME } from './character'
+import { CHARACTER_NAME } from './character.js'
 
 /**
  * 위기 신호 대응. 캐릭터를 깨지 않으면서 실제 도움을 안내한다.

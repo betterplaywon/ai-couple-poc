@@ -10,6 +10,9 @@
    *
    * 그래서 여기 값은 `tsconfig.api.json`과 **일치시켜 둔다.** 한쪽만 고치면 로컬은 통과하고
    * 배포만 깨지는데, 그건 푸시하기 전까지 안 보인다.
+   *
+   * `moduleResolution: bundler`는 TS2835를 **없애는 게 아니라 침묵시킨다.** 실행 시점의 ESM Node는
+   * 여전히 확장자를 요구하므로, api/에서 도달하는 파일의 상대 경로에는 `.js`를 붙인다 (`api/chat.ts` 주석).
    */
   "compilerOptions": {
     "target": "es2023",
