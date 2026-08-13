@@ -30,25 +30,33 @@
 | M5b | 트루엔딩 에필로그 (연인이 된 다음 날) | "연인" 구간이 화면에서 보임. 고정 스크립트, 턴 없음 | ✅ 완료 |
 | M6 | 재도전 + 익숙함 누적 | 배드 → 1화 재시작, 2번째 기시감·3번째 자각이 실제로 드러남 | ⚠️ 코드 완료 · **체감 미검증** |
 | M7 | AI 고지 상시 노출 | 화면 하단 고정 | ✅ 완료 (엔딩 화면 포함) |
-| M11 | **런타임 LLM을 Claude로 복귀** | `ANTHROPIC_API_KEY`로 완주 1회 + 델타 분포가 Gemini와 유사 | 미착수 |
+| M11 | **런타임 LLM을 Claude로 복귀** | `ANTHROPIC_API_KEY`로 완주 1회 + 델타 분포가 Gemini와 유사 | ✅ 코드 완료 · 실호출 확인 |
 | M8 | Vercel 배포 | 접속 링크 확보 (인프라 작업은 하지 않음) | 미착수 |
 | M9 | `transcripts/` 커밋 | `uvx claude-code-transcripts`, gitignore에 안 걸림 | 미착수 |
 | M10 | README 500자 소개 | 링크 포함 | 초안 작성 (링크 미삽입) |
 
-### M11 — Claude 복귀 시 바꿀 곳
+### M11 — Claude 복귀 (2026-08-13 완료)
 
 Gemini는 **크레딧 소진에 대한 임시 대응**이었다([#18](03-tradeoffs.md)).
-`api/chat.ts`를 순수 프록시로 둔 덕에([#11](03-tradeoffs.md)) 교체는 **한 파일 4곳**이다.
+`api/chat.ts`를 순수 프록시로 둔 덕에([#11](03-tradeoffs.md)) 교체는 예고대로 **한 파일**로 끝났다.
 
-| 위치 | 지금 | 바꿀 것 |
+| 위치 | 전 | 후 |
 |---|---|---|
-| `api/chat.ts:1` | `@google/genai` import | `@anthropic-ai/sdk` (이미 의존성에 있음) |
+| `api/chat.ts:1` | `@google/genai` | `@anthropic-ai/sdk` |
 | `api/chat.ts:8` | `GEMINI_MODEL ?? 'gemini-3.5-flash-lite'` | `ANTHROPIC_MODEL ?? 'claude-haiku-4-5'` |
 | `api/chat.ts:65` | `process.env.GEMINI_API_KEY` | `process.env.ANTHROPIC_API_KEY` |
 | `api/chat.ts:79-91` | `generateContent` + `responseJsonSchema` | `messages.create` + `output_config.format` |
-| `vite.config.ts` | `loadEnv` 접두사 목록 | `ANTHROPIC_` 이미 포함 — 수정 불필요 |
+| `vite.config.ts` | — | `ANTHROPIC_` 이미 포함, 수정 없음 |
 
-**바꾸지 않는 것:** `TURN_SCHEMA`(그대로 재사용), `buildSystemPrompt`, `src/engine/`, UI, 목업 폴백.
+**바꾸지 않은 것:** `TURN_SCHEMA`(그대로 재사용), `buildSystemPrompt`, `src/engine/`, UI, 목업 폴백.
+
+계획과 달랐던 것 둘:
+
+- **`@anthropic-ai/sdk`는 의존성에 없었다.** [#18](03-tradeoffs.md)에서 Gemini로 갈 때 함께 제거됐고,
+  이 문서의 "이미 의존성에 있음"은 [#9](03-tradeoffs.md) 시절 기준으로 남아 있던 낡은 기록이었다.
+  `pnpm add @anthropic-ai/sdk`가 선행돼야 한다.
+- **Anthropic은 첫 메시지가 `user`여야 한다.** 화의 고정 오프닝 때문에 이력이 assistant로 시작하므로
+  앞쪽 assistant 턴을 떨어뜨리는 한 줄이 추가로 필요했다([#24](03-tradeoffs.md)).
 
 복귀 후 반드시 `/playthrough`를 다시 돌린다. 성의 상한은 코드가 지므로 제공자가 바뀌어도
 판별은 유지되지만, **`plain`/`engaged` 구간의 원시 delta 분포는 모델마다 다르다.**

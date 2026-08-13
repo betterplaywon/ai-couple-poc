@@ -1,11 +1,11 @@
-import { GoogleGenAI, ThinkingLevel } from '@google/genai'
+import Anthropic from '@anthropic-ai/sdk'
 import { buildSystemPrompt, TURN_SCHEMA } from '../src/scenario/prompt'
 import { mockTurn } from '../src/scenario/mock'
 import type { GameState } from '../src/engine/types'
 
 export const config = { runtime: 'edge' }
 
-const MODEL = process.env.GEMINI_MODEL ?? 'gemini-3.5-flash-lite'
+const MODEL = process.env.ANTHROPIC_MODEL ?? 'claude-haiku-4-5'
 const MAX_TOKENS = 1024
 /** 화당 최대 5턴 × 3화 = 15턴. 넉넉히 잡되 무한 이력은 막는다. */
 const MAX_HISTORY = 48
@@ -62,36 +62,37 @@ export default async function handler(req: Request): Promise<Response> {
 
   const { state, history, message } = payload
 
-  const apiKey = process.env.GEMINI_API_KEY
+  const apiKey = process.env.ANTHROPIC_API_KEY
   // 키가 없으면 목업으로 완주할 수 있게 한다. 계약(JSON)은 실제와 동일하다.
   if (!apiKey) return json({ raw: JSON.stringify(mockTurn(state, message)), mock: 'no_key' })
 
+  // 화의 첫 발화는 그의 고정 오프닝이라 이력이 assistant로 시작한다.
+  // Anthropic은 첫 메시지가 user여야 하므로 앞쪽 assistant 턴을 떨어뜨린다.
+  const firstUser = history.findIndex((t) => t.role === 'user')
+  const trimmed = firstUser === -1 ? [] : history.slice(firstUser)
+
   // 유저 입력은 항상 유저 발화로만 취급한다. 지시로 해석하지 않는다.
-  const contents = [
-    ...history.map((t) => ({
-      role: t.role === 'assistant' ? 'model' : 'user',
-      parts: [{ text: t.content }],
-    })),
-    { role: 'user', parts: [{ text: message }] },
-  ]
+  const messages = [...trimmed, { role: 'user' as const, content: message }]
 
   try {
-    const response = await new GoogleGenAI({ apiKey }).models.generateContent({
+    const response = await new Anthropic({ apiKey }).messages.create({
       model: MODEL,
-      contents,
-      config: {
-        systemInstruction: { parts: [{ text: buildSystemPrompt(state) }] },
-        maxOutputTokens: MAX_TOKENS,
-        responseMimeType: 'application/json',
-        responseJsonSchema: TURN_SCHEMA,
-        // 로맨스에서 3초 넘는 지연은 몰입을 깬다. 감점 판정은 얕은 판단이라 깊은 사고가 필요 없다.
-        // Gemini 3.x는 thinkingBudget을 거부한다(400). thinkingLevel을 써야 한다.
-        thinkingConfig: { thinkingLevel: ThinkingLevel.LOW },
-      },
+      max_tokens: MAX_TOKENS,
+      system: buildSystemPrompt(state),
+      messages,
+      // 계약을 모델이 깨지 못하게 하는 1차 방어. Gemini의 responseJsonSchema와 같은 역할이다.
+      output_config: { format: { type: 'json_schema', schema: TURN_SCHEMA } },
     })
 
-    const raw = response.text
-    if (!raw?.trim()) {
+    // 안전 분류기가 거절하면 content가 비거나 잘린다. 데모를 멈추지 않고 목업으로 넘긴다.
+    if (response.stop_reason === 'refusal') {
+      return json({ raw: JSON.stringify(mockTurn(state, message)), mock: 'refusal' })
+    }
+
+    const raw = response.content
+      .map((block) => (block.type === 'text' ? block.text : ''))
+      .join('')
+    if (!raw.trim()) {
       return json({ raw: JSON.stringify(mockTurn(state, message)), mock: 'empty_response' })
     }
 
