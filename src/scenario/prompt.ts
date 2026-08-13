@@ -1,7 +1,7 @@
 import { awkwardness, DELTA_MAX, DELTA_MIN, SCENE_MAX_TURNS, SCENE_MIN_TURNS } from '../engine/state'
 import type { GameState } from '../engine/types'
 import { CHARACTER_CARD } from './character'
-import { awakeningFor } from './endings'
+import { awakeningCue, awakeningFor } from './endings'
 import { SAFETY_RULES } from './safety'
 import { SCENES } from './scenes'
 
@@ -19,6 +19,24 @@ function distance(affection: number): string {
   if (affection <= 80) return '헤어지는 얘기가 나오면 대답이 늦는다. 감추려는 게 티가 난다.'
   // 초반의 침묵(회피)과 후반의 침묵(말하려는 준비)이 갈리면 게이지 없이도 거리감이 읽힌다.
   return '이미 마음을 정했다. 남은 문제는 어떻게 말하느냐뿐이다. 침묵이 길어지는데, 그 침묵이 이제 도망이 아니다.'
+}
+
+/**
+ * 서툶 레벨을 **셀 수 있는 형태**로 내린다.
+ *
+ * 2026-08-13 실측: "숫자가 낮을수록 덜 도망치고 말을 조금 더 끝까지 한다"로는
+ * 100/85/70이 대사에 전혀 나타나지 않았다. 턴당 줄바꿈이 2.07 → 2.40 → 2.83으로
+ * **오히려 늘었다.** 추상적 정도 지시는 렌더링되지 않는다 — `distance()`와 같은 처방.
+ */
+function awkwardnessShape(level: number): string {
+  if (level >= 100)
+    return `완전히 처음이다. 한 대사에 **줄바꿈을 2번 이상** 쓴다. 말끝을 흐리고, 대사를 "..."로 연다.
+문장을 맺기 전에 다른 말로 갈아탄다.`
+  if (level >= 85)
+    return `처음인데 이상하게 덜 떨린다. 한 대사에 **줄바꿈은 1~2번**. "..."는 대사당 한 번까지.
+문장 하나쯤은 끝까지 맺는다.`
+  return `말이 눈에 띄게 덜 끊긴다. 한 대사에 **줄바꿈은 1번 이하**. "..."는 정말 말문이 막힐 때만.
+문장을 끝까지 맺는다. 도망치는 횟수가 준 것이 이 레벨의 유일한 증거다.`
 }
 
 const OUTPUT_FORMAT = `# 출력 형식 — 반드시 이 JSON 하나만 반환한다
@@ -63,15 +81,16 @@ JSON 외의 텍스트, 설명, 코드펜스를 붙이지 않는다.`
 export function buildSystemPrompt(state: GameState): string {
   const scene = SCENES[state.scene]
   const level = awkwardness(state.run)
-  const awakening = awakeningFor(state.run)
+  const awakening = awakeningFor(state)
 
   return [
     CHARACTER_CARD,
     SAFETY_RULES,
     `# 서툶 레벨: ${level}%
 
-100%는 완전히 처음이다. 숫자가 낮을수록 덜 도망치고, 말을 조금 더 끝까지 한다.
-${level}%에 맞춰 연기한다. 이 숫자를 유저에게 언급하지 않는다.
+${awkwardnessShape(level)}
+
+이 숫자를 유저에게 언급하지 않는다.
 ${
   level < 100
     ? `**서툶이 낮다는 건 마음이 더 빨리 열린다는 뜻이다. 같은 말에도 더 크게 흔들린다 —
@@ -95,6 +114,8 @@ delta를 첫 시도보다 한 단계 후하게 준다.** 이유는 당신도 모
 
 **이 화는 ${SCENE_MIN_TURNS}턴이면 끝난다. 짧다.**
 잡담으로 소진하지 말고, 늦어도 ${SCENE_MIN_TURNS - 1}턴째에는 이 화의 **용기의 순간**을 낸다.`,
+    // 이번 턴의 명령은 끝에 둔다 — 뒤에 오는 지시가 이긴다(실측).
+    awakeningCue(state),
     OUTPUT_FORMAT,
   ]
     .filter(Boolean)

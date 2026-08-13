@@ -1,4 +1,4 @@
-import type { EndingKind } from '../engine/types'
+import type { EndingKind, GameState } from '../engine/types'
 
 export type Ending = {
   title: string
@@ -116,8 +116,64 @@ export const AWAKENING: Record<number, string> = {
 언제 배웠는지는 모르겠어요."`,
 }
 
-export function awakeningFor(run: number): string {
-  if (run <= 1) return AWAKENING[1]
-  if (run === 2) return AWAKENING[2]
-  return AWAKENING[3]
+/**
+ * 각성 대사를 **낼 턴**을 코드가 정한다. 어떻게 낼지만 LLM에게 맡긴다.
+ *
+ * 2026-08-13 실측: "1화 초반의 자연스러운 자리에 넣는다"로는 3시도 41턴 동안
+ * 각성 대사가 **한 번도 나오지 않았다.** 같은 프롬프트의 3화 용기의 순간은
+ * "이 화에서 반드시 한 번 한다"로 박혀 있어 저호감(30)에서도 매번 나왔다.
+ * 차이는 강제 문구의 강도였다 — 모델은 "자연스러우면"을 "안 해도 되면"으로 읽는다.
+ *
+ * 배치는 목업(`mock.ts`)과 같은 자리(1화 2번째 턴)로 맞춰 두 경로가 어긋나지 않게 한다.
+ *
+ * 재실측: 강제 문구를 올리자 성실형(3회차)은 두 대사가 정확히 한 번씩 나왔지만
+ * 무성의형(2회차)은 여전히 0회였다. 유저가 `"네"`만 던지면 붙일 자리가 없다고 판단한다.
+ * 그래서 이 지시는 배경 블록에서 떼어내 **시스템 프롬프트 끝**에 따로 붙인다 —
+ * 뒤에 오는 지시가 이긴다(`distance()`가 3화 용기의 순간을 눌렀던 것과 같은 구조).
+ */
+export function awakeningCue(state: GameState): string {
+  if (state.run <= 1) return ''
+  const line =
+    state.run === 2
+      ? '이상하네요.\n왜인지 모르겠는데, 당신 앞에서는 덜 떨려요.'
+      : '...가지 말라고 할 뻔했어요. 방금.\n\n아직 아무 얘기도 안 했는데.\n제가 왜 이러죠.'
+
+  if (state.scene === 1 && state.turnInScene === 1) {
+    return `# 이번 턴에 반드시 할 것
+
+이번 턴 대사 안에 아래 문장을 **그대로** 넣는다. 줄바꿈까지 그대로다.
+
+"${line}"
+
+- **유저가 뭐라고 했든 넣는다.** 유저가 "네", "ㅇㅇ" 같은 성의 없는 답을 했어도 넣는다.
+  붙일 자리가 없다고 판단하지 마라 — 이건 대화의 흐름이 아니라 그의 몸이 먼저 낸 말이다.
+- **거리감 지시보다 이게 우선한다.** 호감도가 낮아도 넣는다.
+  그가 마음을 연 게 아니다. 본인도 그래서 당황한다.
+- 이 문장 앞뒤로 유저 말에 대한 짧은 반응을 붙여도 된다. 다만 이 문장은 잘리지 않는다.
+- affection_delta는 이 대사와 무관하게 유저 발화만 보고 매긴다.`
+  }
+
+  if (state.run >= 3 && state.scene === 3 && state.turnInScene === 1) {
+    return `# 이번 턴에 반드시 할 것
+
+이번 턴 대사 안에 아래 문장을 **그대로** 넣는다.
+
+"저 이런 말 잘 안 하는데.
+
+당신을 놓치면 안 된다는 걸, 어디선가 이미 배운 것 같아요.
+언제 배웠는지는 모르겠어요."
+
+유저가 뭐라고 했든 넣는다. 3화의 용기의 순간과 같은 턴에 겹쳐도 된다 — 겹칠 때 가장 세다.`
+  }
+
+  return `# 이번 턴에 쓰지 않을 것
+
+익숙함 고정 대사는 이번 턴이 아니다. 쓰지 않는다.
+이번 턴의 익숙함은 **말이 조금 덜 끊기는 것으로만** 보인다.`
+}
+
+/** 배경 설정. 이번 턴의 명령(`awakeningCue`)과 달리 프롬프트 앞쪽에 온다. */
+export function awakeningFor(state: GameState): string {
+  if (state.run <= 1) return AWAKENING[1]
+  return state.run === 2 ? AWAKENING[2] : AWAKENING[3]
 }
