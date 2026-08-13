@@ -94,7 +94,7 @@ async function handler(req: Request): Promise<Response> {
       max_tokens: MAX_TOKENS,
       system: buildSystemPrompt(state),
       messages,
-      // 계약을 모델이 깨지 못하게 하는 1차 방어. Gemini의 responseJsonSchema와 같은 역할이다.
+      // 계약을 모델이 깨지 못하게 하는 1차 방어. 그래도 깨질 수 있으므로 parseTurn이 폴백을 진다.
       output_config: { format: { type: 'json_schema', schema: TURN_SCHEMA } },
     })
 

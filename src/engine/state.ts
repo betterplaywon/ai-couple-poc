@@ -11,7 +11,7 @@ export const AFFECTION_MAX = 100
 export const DELTA_MIN = -2
 export const DELTA_MAX = 8
 
-/** 화당 4턴, 총 12턴. 짧아야 재도전이 가능하다. */
+/** 화당 4~5턴, 총 12~15턴. 짧아야 재도전이 가능하다. */
 export const SCENE_MIN_TURNS = 4
 export const SCENE_MAX_TURNS = 5
 export const LAST_SCENE = 3
@@ -131,7 +131,7 @@ export function applyDelta(state: GameState, delta: number): GameState {
   }
 }
 
-/** 화 전환 여부. 턴 수 ≥ 6 AND (LLM 신호 OR 턴 수 ≥ 8) */
+/** 화 전환 여부. 턴 수 ≥ SCENE_MIN_TURNS AND (LLM 신호 OR 턴 수 ≥ SCENE_MAX_TURNS) */
 export function resolveScene(state: GameState, sceneAdvance: boolean): boolean {
   if (state.turnInScene < SCENE_MIN_TURNS) return false
   return sceneAdvance || state.turnInScene >= SCENE_MAX_TURNS

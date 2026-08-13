@@ -5,7 +5,7 @@
 
 ## 원칙: 진행은 코드, 연기는 LLM
 
-**LLM에 진행 제어권을 주지 않는다.** 주면 3턴 만에 3화로 날아가거나 12턴째도 안 끝난다.
+**LLM에 진행 제어권을 주지 않는다.** 주면 3턴 만에 3화로 날아가거나 정해진 턴을 넘겨도 안 끝난다.
 완주율·평균 턴 수를 지표로 쓰려면 진행 규칙이 결정론적이어야 한다.
 
 | 누가 | 무엇을 |
@@ -46,7 +46,7 @@ LLM은 순응적으로 훈련돼 있어 그냥 두면 delta가 늘 양수로 나
 
 **LLM이 준 값을 검증 없이 신뢰하지 않는다.** 범위를 클램프한 뒤 누적한다.
 
-### 성의 상한 — 배점을 지키는 것은 프롬프트가 아니라 코드다
+### 성의 상한·하한 — 배점을 지키는 것은 프롬프트가 아니라 코드다
 
 프롬프트에 "무성의는 0"이라고 써도 지켜지지 않는다. 실측(2026-08-12, Gemini):
 
@@ -70,6 +70,19 @@ LLM은 순응적으로 훈련돼 있어 그냥 두면 delta가 늘 양수로 나
   **화별 천장이 매 화 포화되고 무난형이 트루로 샌다**(실측 100). 되묻기·다가옴으로 좁혔다.
 - `plain` 상한이 2인 이유: 최장 경로(강제 전환 5턴 × 3화 = 15턴)를 성의만으로 채워도
   `30 + 30 = 60`으로 트루 임계값 75에 닿지 않는다. 3이면 정확히 75가 되어 샌다.
+
+**하한도 같은 자리에서 코드가 정한다** (`effortFloor`, [#29](03-tradeoffs.md)).
+
+| 등급 | 하한 |
+|---|---|
+| `none` | **0** — 무성의는 깎지 않는다 |
+| `plain` · `engaged` | `DELTA_MIN` (-2) — 무례는 그대로 통과 |
+
+프롬프트에 `0 : 성의 없는 답 — 깎지는 않되`라고 써 둬도 지켜지지 않는다.
+2026-08-13 실측에서 무성의형 15턴 중 **6턴에 -2**가 나와 최종 호감도가 18까지 내려갔다 —
+"깎지 않는다"는 배점 원칙 자체가 무너진 것이다. 상한과 같은 이유로 하한도 코드가 진다.
+
+하한은 `none`에만 붙는다. **무례에 하한이 걸리면 감점 장치가 통째로 죽는다.**
 
 ## 임계값
 
@@ -119,19 +132,22 @@ LLM은 순응적으로 훈련돼 있어 그냥 두면 delta가 늘 양수로 나
 `src/engine/`에 부수효과 없이 격리한다. React 상태나 fetch가 섞이면 테스트가 불가능해진다.
 
 ```
-classifyEffort(text)       → none | plain | engaged
-effortCeiling(text)        → 이 발화가 받을 수 있는 delta 상한
-applyDelta(state, delta)   → 클램프 후 누적
-resolveScene(state)        → 화 전환 여부
-resolveEnding(state)       → 배드 | 노말 | 트루
-parseTurn(raw)             → JSON 파싱 + 폴백
-nextRun(state)             → 재도전 시 상태 초기화
+classifyEffort(text)         → none | plain | engaged
+effortCeiling(text)          → 이 발화가 받을 수 있는 delta 상한
+effortFloor(text)            → 이 발화가 받을 수 있는 delta 하한 (none이면 0)
+applyDelta(state, delta)     → 클램프 후 누적
+resolveScene(state, signal)  → 화 전환 여부
+resolveEnding(state)         → 배드 | 노말 | 트루
+applyTurn(state, turn, text) → 위를 한 번에 — 상태 전이의 유일한 출처
+awkwardness(run)             → 시도별 서툶 레벨 (100 / 85 / 70)
+parseTurn(raw)               → JSON 파싱 + 폴백
+nextRun(state)               → 재도전 시 상태 초기화
 ```
 
 **호감도 누적·화 전환·엔딩 판정을 클라와 서버 양쪽에 두지 않는다.**
 두 곳에 있으면 반드시 어긋나고, 어긋난 순간 지표가 전부 무의미해진다.
 
-이 함수들은 `pnpm test`로 검증한다. 특히 경계값(40/41, 74/75), 클램프 상한, 시도 증가.
+이 함수들은 `pnpm test`로 검증한다(현재 96 케이스). 특히 경계값(40/41, 74/75), 클램프 상한·하한, 시도 증가.
 off-by-one이면 데모 당일에야 드러난다.
 
 ## 프롬프트 조립 순서
@@ -175,15 +191,18 @@ off-by-one이면 데모 당일에야 드러난다.
 
 ## 모델
 
-`gemini-3.5-flash-lite` (무료 티어, `GEMINI_MODEL`로 교체 가능). `responseJsonSchema`로 턴 계약을 강제한다.
+`claude-haiku-4-5` (`ANTHROPIC_MODEL`로 교체 가능). `output_config.format`의 `json_schema`로
+턴 계약(`TURN_SCHEMA`)을 강제한다 — 파싱 실패율을 낮추는 1차 방어다.
 
-무료 티어 한도는 **모델별로 다른 버킷**이다 — `gemini-3.6-flash`는 20요청/**일**이라
-완주 한 번(12턴)에 소진되고, `gemini-3.5-flash-lite`는 15요청/**분**이라 회복된다.
-이 차이가 `/playthrough`를 돌릴 수 있는지를 가른다.
+지연을 줄이려고 `thinking: disabled` + `effort: medium`으로 둔다 ([#14](03-tradeoffs.md)).
+로맨스에서 3초 넘는 지연은 몰입을 깬다.
 
-> **2026-08-12 제공자 교체**: Claude API 크레딧 소진으로 Gemini로 옮겼다.
-> 과제 요구사항은 "모든 개발을 Claude Code로 진행"이지 특정 런타임 모델을 지정하지 않는다.
-> 바뀐 파일은 `api/chat.ts` 하나다. 근거는 [#18](03-tradeoffs.md).
+> **2026-08-12 → 08-13 제공자 왕복**: 크레딧 소진으로 Gemini로 옮겼다가([#18](03-tradeoffs.md))
+> 전제가 해소돼 Claude로 복귀했다([#23](03-tradeoffs.md)). 두 번 다 바뀐 파일은 `api/chat.ts` 하나다 —
+> `api/`를 순수 프록시로 둔 [#11](03-tradeoffs.md)의 배당금이다.
 
-주의: Gemini 3.x는 `thinkingBudget`을 거부한다(400). 지연을 줄이려면 `thinkingLevel: LOW`를 쓴다.
+런타임 제약 둘. **Node.js 런타임을 쓴다** — edge에서는 SDK가 참조하는 `node:fs`·`node:path` 때문에
+배포가 깨진다([#28](03-tradeoffs.md)). **첫 메시지는 `user`여야 한다** — 화의 고정 오프닝 때문에
+이력이 assistant로 시작하므로 앞쪽 assistant 턴을 떨어뜨린다([#24](03-tradeoffs.md)).
+
 키가 없거나 호출이 실패하면 `src/scenario/mock.ts`로 폴백해 완주는 계속된다.

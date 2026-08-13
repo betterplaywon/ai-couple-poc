@@ -20,7 +20,7 @@ pnpm lint     # eslint
 ```
 src/           React SPA (상태는 메모리에만, 저장 안 함)
 src/scenario/  화별 시나리오·프롬프트 (romance-director 담당)
-api/chat.ts    LLM 프록시 서버리스 함수 (Gemini) — 1개 상한
+api/chat.ts    LLM 프록시 서버리스 함수 (Claude API) — 1개 상한
 docs/          컨텍스트와 트레이드오프 기록
 ```
 
