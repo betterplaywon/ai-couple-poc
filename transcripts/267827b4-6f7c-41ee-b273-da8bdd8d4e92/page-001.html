@@ -1,0 +1,1384 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Claude Code transcript - page 1</title>
+    <style>
+:root { --bg-color: #f5f5f5; --card-bg: #ffffff; --user-bg: #e3f2fd; --user-border: #1976d2; --assistant-bg: #f5f5f5; --assistant-border: #9e9e9e; --thinking-bg: #fff8e1; --thinking-border: #ffc107; --thinking-text: #666; --tool-bg: #f3e5f5; --tool-border: #9c27b0; --tool-result-bg: #e8f5e9; --tool-error-bg: #ffebee; --text-color: #212121; --text-muted: #757575; --code-bg: #263238; --code-text: #aed581; }
+* { box-sizing: border-box; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: var(--bg-color); color: var(--text-color); margin: 0; padding: 16px; line-height: 1.6; }
+.container { max-width: 800px; margin: 0 auto; }
+h1 { font-size: 1.5rem; margin-bottom: 24px; padding-bottom: 8px; border-bottom: 2px solid var(--user-border); }
+.header-row { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; border-bottom: 2px solid var(--user-border); padding-bottom: 8px; margin-bottom: 24px; }
+.header-row h1 { border-bottom: none; padding-bottom: 0; margin-bottom: 0; flex: 1; min-width: 200px; }
+.message { margin-bottom: 16px; border-radius: 12px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+.message.user { background: var(--user-bg); border-left: 4px solid var(--user-border); }
+.message.assistant { background: var(--card-bg); border-left: 4px solid var(--assistant-border); }
+.message.tool-reply { background: #fff8e1; border-left: 4px solid #ff9800; }
+.tool-reply .role-label { color: #e65100; }
+.tool-reply .tool-result { background: transparent; padding: 0; margin: 0; }
+.tool-reply .tool-result .truncatable.truncated::after { background: linear-gradient(to bottom, transparent, #fff8e1); }
+.message-header { display: flex; justify-content: space-between; align-items: center; padding: 8px 16px; background: rgba(0,0,0,0.03); font-size: 0.85rem; }
+.role-label { font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
+.user .role-label { color: var(--user-border); }
+time { color: var(--text-muted); font-size: 0.8rem; }
+.timestamp-link { color: inherit; text-decoration: none; }
+.timestamp-link:hover { text-decoration: underline; }
+.message:target { animation: highlight 2s ease-out; }
+@keyframes highlight { 0% { background-color: rgba(25, 118, 210, 0.2); } 100% { background-color: transparent; } }
+.message-content { padding: 16px; }
+.message-content p { margin: 0 0 12px 0; }
+.message-content p:last-child { margin-bottom: 0; }
+.thinking { background: var(--thinking-bg); border: 1px solid var(--thinking-border); border-radius: 8px; padding: 12px; margin: 12px 0; font-size: 0.9rem; color: var(--thinking-text); }
+.thinking-label { font-size: 0.75rem; font-weight: 600; text-transform: uppercase; color: #f57c00; margin-bottom: 8px; }
+.thinking p { margin: 8px 0; }
+.assistant-text { margin: 8px 0; }
+.tool-use { background: var(--tool-bg); border: 1px solid var(--tool-border); border-radius: 8px; padding: 12px; margin: 12px 0; }
+.tool-header { font-weight: 600; color: var(--tool-border); margin-bottom: 8px; display: flex; align-items: center; gap: 8px; }
+.tool-icon { font-size: 1.1rem; }
+.tool-description { font-size: 0.9rem; color: var(--text-muted); margin-bottom: 8px; font-style: italic; }
+.tool-result { background: var(--tool-result-bg); border-radius: 8px; padding: 12px; margin: 12px 0; }
+.tool-result.tool-error { background: var(--tool-error-bg); }
+.file-tool { border-radius: 8px; padding: 12px; margin: 12px 0; }
+.write-tool { background: linear-gradient(135deg, #e3f2fd 0%, #e8f5e9 100%); border: 1px solid #4caf50; }
+.edit-tool { background: linear-gradient(135deg, #fff3e0 0%, #fce4ec 100%); border: 1px solid #ff9800; }
+.file-tool-header { font-weight: 600; margin-bottom: 4px; display: flex; align-items: center; gap: 8px; font-size: 0.95rem; }
+.write-header { color: #2e7d32; }
+.edit-header { color: #e65100; }
+.file-tool-icon { font-size: 1rem; }
+.file-tool-path { font-family: monospace; background: rgba(0,0,0,0.08); padding: 2px 8px; border-radius: 4px; }
+.file-tool-fullpath { font-family: monospace; font-size: 0.8rem; color: var(--text-muted); margin-bottom: 8px; word-break: break-all; }
+.file-content { margin: 0; }
+.edit-section { display: flex; margin: 4px 0; border-radius: 4px; overflow: hidden; }
+.edit-label { padding: 8px 12px; font-weight: bold; font-family: monospace; display: flex; align-items: flex-start; }
+.edit-old { background: #fce4ec; }
+.edit-old .edit-label { color: #b71c1c; background: #f8bbd9; }
+.edit-old .edit-content { color: #880e4f; }
+.edit-new { background: #e8f5e9; }
+.edit-new .edit-label { color: #1b5e20; background: #a5d6a7; }
+.edit-new .edit-content { color: #1b5e20; }
+.edit-content { margin: 0; flex: 1; background: transparent; font-size: 0.85rem; }
+.edit-replace-all { font-size: 0.75rem; font-weight: normal; color: var(--text-muted); }
+.write-tool .truncatable.truncated::after { background: linear-gradient(to bottom, transparent, #e6f4ea); }
+.edit-tool .truncatable.truncated::after { background: linear-gradient(to bottom, transparent, #fff0e5); }
+.todo-list { background: linear-gradient(135deg, #e8f5e9 0%, #f1f8e9 100%); border: 1px solid #81c784; border-radius: 8px; padding: 12px; margin: 12px 0; }
+.todo-header { font-weight: 600; color: #2e7d32; margin-bottom: 10px; display: flex; align-items: center; gap: 8px; font-size: 0.95rem; }
+.todo-items { list-style: none; margin: 0; padding: 0; }
+.todo-item { display: flex; align-items: flex-start; gap: 10px; padding: 6px 0; border-bottom: 1px solid rgba(0,0,0,0.06); font-size: 0.9rem; }
+.todo-item:last-child { border-bottom: none; }
+.todo-icon { flex-shrink: 0; width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; font-weight: bold; border-radius: 50%; }
+.todo-completed .todo-icon { color: #2e7d32; background: rgba(46, 125, 50, 0.15); }
+.todo-completed .todo-content { color: #558b2f; text-decoration: line-through; }
+.todo-in-progress .todo-icon { color: #f57c00; background: rgba(245, 124, 0, 0.15); }
+.todo-in-progress .todo-content { color: #e65100; font-weight: 500; }
+.todo-pending .todo-icon { color: #757575; background: rgba(0,0,0,0.05); }
+.todo-pending .todo-content { color: #616161; }
+pre { background: var(--code-bg); color: var(--code-text); padding: 12px; border-radius: 6px; overflow-x: auto; font-size: 0.85rem; line-height: 1.5; margin: 8px 0; white-space: pre-wrap; word-wrap: break-word; }
+pre.json { color: #e0e0e0; }
+code { background: rgba(0,0,0,0.08); padding: 2px 6px; border-radius: 4px; font-size: 0.9em; }
+pre code { background: none; padding: 0; }
+.user-content { margin: 0; }
+.truncatable { position: relative; }
+.truncatable.truncated .truncatable-content { max-height: 200px; overflow: hidden; }
+.truncatable.truncated::after { content: ''; position: absolute; bottom: 32px; left: 0; right: 0; height: 60px; background: linear-gradient(to bottom, transparent, var(--card-bg)); pointer-events: none; }
+.message.user .truncatable.truncated::after { background: linear-gradient(to bottom, transparent, var(--user-bg)); }
+.message.tool-reply .truncatable.truncated::after { background: linear-gradient(to bottom, transparent, #fff8e1); }
+.tool-use .truncatable.truncated::after { background: linear-gradient(to bottom, transparent, var(--tool-bg)); }
+.tool-result .truncatable.truncated::after { background: linear-gradient(to bottom, transparent, var(--tool-result-bg)); }
+.expand-btn { display: none; width: 100%; padding: 8px 16px; margin-top: 4px; background: rgba(0,0,0,0.05); border: 1px solid rgba(0,0,0,0.1); border-radius: 6px; cursor: pointer; font-size: 0.85rem; color: var(--text-muted); }
+.expand-btn:hover { background: rgba(0,0,0,0.1); }
+.truncatable.truncated .expand-btn, .truncatable.expanded .expand-btn { display: block; }
+.pagination { display: flex; justify-content: center; gap: 8px; margin: 24px 0; flex-wrap: wrap; }
+.pagination a, .pagination span { padding: 5px 10px; border-radius: 6px; text-decoration: none; font-size: 0.85rem; }
+.pagination a { background: var(--card-bg); color: var(--user-border); border: 1px solid var(--user-border); }
+.pagination a:hover { background: var(--user-bg); }
+.pagination .current { background: var(--user-border); color: white; }
+.pagination .disabled { color: var(--text-muted); border: 1px solid #ddd; }
+.pagination .index-link { background: var(--user-border); color: white; }
+details.continuation { margin-bottom: 16px; }
+details.continuation summary { cursor: pointer; padding: 12px 16px; background: var(--user-bg); border-left: 4px solid var(--user-border); border-radius: 12px; font-weight: 500; color: var(--text-muted); }
+details.continuation summary:hover { background: rgba(25, 118, 210, 0.15); }
+details.continuation[open] summary { border-radius: 12px 12px 0 0; margin-bottom: 0; }
+.index-item { margin-bottom: 16px; border-radius: 12px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.1); background: var(--user-bg); border-left: 4px solid var(--user-border); }
+.index-item a { display: block; text-decoration: none; color: inherit; }
+.index-item a:hover { background: rgba(25, 118, 210, 0.1); }
+.index-item-header { display: flex; justify-content: space-between; align-items: center; padding: 8px 16px; background: rgba(0,0,0,0.03); font-size: 0.85rem; }
+.index-item-number { font-weight: 600; color: var(--user-border); }
+.index-item-content { padding: 16px; }
+.index-item-stats { padding: 8px 16px 12px 32px; font-size: 0.85rem; color: var(--text-muted); border-top: 1px solid rgba(0,0,0,0.06); }
+.index-item-commit { margin-top: 6px; padding: 4px 8px; background: #fff3e0; border-radius: 4px; font-size: 0.85rem; color: #e65100; }
+.index-item-commit code { background: rgba(0,0,0,0.08); padding: 1px 4px; border-radius: 3px; font-size: 0.8rem; margin-right: 6px; }
+.commit-card { margin: 8px 0; padding: 10px 14px; background: #fff3e0; border-left: 4px solid #ff9800; border-radius: 6px; }
+.commit-card a { text-decoration: none; color: #5d4037; display: block; }
+.commit-card a:hover { color: #e65100; }
+.commit-card-hash { font-family: monospace; color: #e65100; font-weight: 600; margin-right: 8px; }
+.index-commit { margin-bottom: 12px; padding: 10px 16px; background: #fff3e0; border-left: 4px solid #ff9800; border-radius: 8px; box-shadow: 0 1px 2px rgba(0,0,0,0.05); }
+.index-commit a { display: block; text-decoration: none; color: inherit; }
+.index-commit a:hover { background: rgba(255, 152, 0, 0.1); margin: -10px -16px; padding: 10px 16px; border-radius: 8px; }
+.index-commit-header { display: flex; justify-content: space-between; align-items: center; font-size: 0.85rem; margin-bottom: 4px; }
+.index-commit-hash { font-family: monospace; color: #e65100; font-weight: 600; }
+.index-commit-msg { color: #5d4037; }
+.index-item-long-text { margin-top: 8px; padding: 12px; background: var(--card-bg); border-radius: 8px; border-left: 3px solid var(--assistant-border); }
+.index-item-long-text .truncatable.truncated::after { background: linear-gradient(to bottom, transparent, var(--card-bg)); }
+.index-item-long-text-content { color: var(--text-color); }
+#search-box { display: none; align-items: center; gap: 8px; }
+#search-box input { padding: 6px 12px; border: 1px solid var(--assistant-border); border-radius: 6px; font-size: 16px; width: 180px; }
+#search-box button, #modal-search-btn, #modal-close-btn { background: var(--user-border); color: white; border: none; border-radius: 6px; padding: 6px 10px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+#search-box button:hover, #modal-search-btn:hover { background: #1565c0; }
+#modal-close-btn { background: var(--text-muted); margin-left: 8px; }
+#modal-close-btn:hover { background: #616161; }
+#search-modal[open] { border: none; border-radius: 12px; box-shadow: 0 4px 24px rgba(0,0,0,0.2); padding: 0; width: 90vw; max-width: 900px; height: 80vh; max-height: 80vh; display: flex; flex-direction: column; }
+#search-modal::backdrop { background: rgba(0,0,0,0.5); }
+.search-modal-header { display: flex; align-items: center; gap: 8px; padding: 16px; border-bottom: 1px solid var(--assistant-border); background: var(--bg-color); border-radius: 12px 12px 0 0; }
+.search-modal-header input { flex: 1; padding: 8px 12px; border: 1px solid var(--assistant-border); border-radius: 6px; font-size: 16px; }
+#search-status { padding: 8px 16px; font-size: 0.85rem; color: var(--text-muted); border-bottom: 1px solid rgba(0,0,0,0.06); }
+#search-results { flex: 1; overflow-y: auto; padding: 16px; }
+.search-result { margin-bottom: 16px; border-radius: 8px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+.search-result a { display: block; text-decoration: none; color: inherit; }
+.search-result a:hover { background: rgba(25, 118, 210, 0.05); }
+.search-result-page { padding: 6px 12px; background: rgba(0,0,0,0.03); font-size: 0.8rem; color: var(--text-muted); border-bottom: 1px solid rgba(0,0,0,0.06); }
+.search-result-content { padding: 12px; }
+.search-result mark { background: #fff59d; padding: 1px 2px; border-radius: 2px; }
+@media (max-width: 600px) { body { padding: 8px; } .message, .index-item { border-radius: 8px; } .message-content, .index-item-content { padding: 12px; } pre { font-size: 0.8rem; padding: 8px; } #search-box input { width: 120px; } #search-modal[open] { width: 95vw; height: 90vh; } }
+</style>
+</head>
+<body>
+    <div class="container">
+        <h1><a href="index.html" style="color: inherit; text-decoration: none;">Claude Code transcript</a> - page 1/1</h1>
+        
+
+<div class="pagination"><a href="index.html" class="index-link">Index</a></div>
+
+        
+<div class="message user" id="msg-2026-08-13T03-48-39-117Z"><div class="message-header"><span class="role-label">User</span><a href="#msg-2026-08-13T03-48-39-117Z" class="timestamp-link"><time datetime="2026-08-13T03:48:39.117Z" data-timestamp="2026-08-13T03:48:39.117Z">2026-08-13T03:48:39.117Z</time></a></div><div class="message-content">
+<div class="assistant-text"><p><ide_opened_file>The user opened the file /Users/user/Desktop/ai-couple-poc/.env.local in the IDE. This may or may not be related to the current task.</ide_opened_file></p></div>
+<div class="assistant-text"><p>vercel 배포는 완료되었고 채팅을 시작하니 "서버 설정이 아직이에요. (ANTHROPIC_API_KEY)"라고 나타나.</p>
+<p>개발자 도구의 네트워크 탭을 확인해보니 chat 통신이 500error가 발생해.</p></div></div></div>
+<div class="message assistant" id="msg-2026-08-13T03-48-41-681Z"><div class="message-header"><span class="role-label">Assistant</span><a href="#msg-2026-08-13T03-48-41-681Z" class="timestamp-link"><time datetime="2026-08-13T03:48:41.681Z" data-timestamp="2026-08-13T03:48:41.681Z">2026-08-13T03:48:41.681Z</time></a></div><div class="message-content">
+<div class="thinking"><div class="thinking-label">Thinking</div></div></div></div>
+<div class="message assistant" id="msg-2026-08-13T03-48-43-097Z"><div class="message-header"><span class="role-label">Assistant</span><a href="#msg-2026-08-13T03-48-43-097Z" class="timestamp-link"><time datetime="2026-08-13T03:48:43.097Z" data-timestamp="2026-08-13T03:48:43.097Z">2026-08-13T03:48:43.097Z</time></a></div><div class="message-content">
+<div class="tool-use bash-tool" data-tool-id="toolu_011qvwQdNEfNYQYPT1Jgt3vT">
+<div class="tool-header"><span class="tool-icon">$</span> Bash</div>
+<div class="tool-description">Read api/chat.ts</div><div class="truncatable"><div class="truncatable-content"><pre class="bash-command">ls &amp;&amp; cat api/chat.ts</pre></div><button class="expand-btn">Show more</button></div>
+</div></div></div>
+<div class="message assistant" id="msg-2026-08-13T03-48-43-614Z"><div class="message-header"><span class="role-label">Assistant</span><a href="#msg-2026-08-13T03-48-43-614Z" class="timestamp-link"><time datetime="2026-08-13T03:48:43.614Z" data-timestamp="2026-08-13T03:48:43.614Z">2026-08-13T03:48:43.614Z</time></a></div><div class="message-content">
+<div class="tool-use bash-tool" data-tool-id="toolu_018ZtBPj5kYwh4QdZHTttwQk">
+<div class="tool-header"><span class="tool-icon">$</span> Bash</div>
+<div class="tool-description">Read package.json and vercel config</div><div class="truncatable"><div class="truncatable-content"><pre class="bash-command">cat package.json &amp;&amp; cat vercel.json 2&gt;/dev/null; ls -a</pre></div><button class="expand-btn">Show more</button></div>
+</div></div></div>
+<div class="message tool-reply" id="msg-2026-08-13T03-48-44-016Z"><div class="message-header"><span class="role-label">Tool reply</span><a href="#msg-2026-08-13T03-48-44-016Z" class="timestamp-link"><time datetime="2026-08-13T03:48:44.016Z" data-timestamp="2026-08-13T03:48:44.016Z">2026-08-13T03:48:44.016Z</time></a></div><div class="message-content"><div class="tool-result"><div class="truncatable"><div class="truncatable-content"><pre>CLAUDE.md
+README.md
+api
+dist
+docs
+eslint.config.js
+index.html
+node_modules
+package.json
+pnpm-lock.yaml
+public
+src
+transcripts
+tsconfig.api.json
+tsconfig.app.json
+tsconfig.json
+tsconfig.node.json
+vite.config.ts
+import Anthropic from &#x27;@anthropic-ai/sdk&#x27;
+import { buildSystemPrompt, TURN_SCHEMA } from &#x27;../src/scenario/prompt&#x27;
+import { mockTurn } from &#x27;../src/scenario/mock&#x27;
+import type { GameState } from &#x27;../src/engine/types&#x27;
+
+/**
+ * 런타임은 **Node.js**다 (Vercel 기본값이라 선언하지 않는다).
+ *
+ * edge로 두면 배포가 깨진다: `@anthropic-ai/sdk`가 `node:fs`·`node:path`를 참조하는데
+ * (`core/credentials`의 프로필 인증 해석, `tools/agent-toolset`) edge 런타임은 이를 지원하지 않는다.
+ * 우리는 apiKey를 직접 넘기므로 그 코드가 실행되진 않지만, 정적 import라 번들에는 들어간다.
+ * (2026-08-13 실측: &quot;Edge Function api/chat is referencing unsupported modules&quot;)
+ *
+ * 이 제품에서 지연을 지배하는 건 LLM 호출(초 단위)이라 edge의 콜드스타트 이점은 무의미하다.
+ */
+const MODEL = process.env.ANTHROPIC_MODEL ?? &#x27;claude-haiku-4-5&#x27;
+const MAX_TOKENS = 1024
+/** 화당 최대 5턴 × 3화 = 15턴. 넉넉히 잡되 무한 이력은 막는다. */
+const MAX_HISTORY = 48
+
+type Turn = { role: &#x27;user&#x27; | &#x27;assistant&#x27;; content: string }
+type ChatRequest = { state: GameState; history: Turn[]; message: string }
+
+function json(body: unknown, status = 200): Response {
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: { &#x27;content-type&#x27;: &#x27;application/json&#x27; },
+  })
+}
+
+function isState(v: unknown): v is GameState {
+  if (typeof v !== &#x27;object&#x27; || v === null) return false
+  const s = v as Record&lt;string, unknown&gt;
+  return (
+    typeof s.run === &#x27;number&#x27; &amp;&amp;
+    typeof s.affection === &#x27;number&#x27; &amp;&amp;
+    (s.scene === 1 || s.scene === 2 || s.scene === 3) &amp;&amp;
+    typeof s.turnInScene === &#x27;number&#x27;
+  )
+}
+
+function parseBody(body: unknown): ChatRequest | null {
+  if (typeof body !== &#x27;object&#x27; || body === null) return null
+  const b = body as Record&lt;string, unknown&gt;
+  if (!isState(b.state)) return null
+  if (typeof b.message !== &#x27;string&#x27; || !b.message.trim()) return null
+
+  const raw = Array.isArray(b.history) ? b.history : []
+  const history: Turn[] = raw
+    .filter((t): t is Turn =&gt; {
+      if (typeof t !== &#x27;object&#x27; || t === null) return false
+      const x = t as Record&lt;string, unknown&gt;
+      return (x.role === &#x27;user&#x27; || x.role === &#x27;assistant&#x27;) &amp;&amp; typeof x.content === &#x27;string&#x27;
+    })
+    .slice(-MAX_HISTORY)
+
+  return { state: b.state, history, message: b.message.slice(0, 2000) }
+}
+
+async function handler(req: Request): Promise&lt;Response&gt; {
+  if (req.method !== &#x27;POST&#x27;) return json({ error: &#x27;method_not_allowed&#x27; }, 405)
+
+  let payload: ChatRequest | null
+  try {
+    payload = parseBody(await req.json())
+  } catch {
+    payload = null
+  }
+  if (!payload) return json({ error: &#x27;bad_request&#x27; }, 400)
+
+  const { state, history, message } = payload
+
+  const apiKey = process.env.ANTHROPIC_API_KEY
+  // 키가 없으면 목업으로 완주할 수 있게 한다. 계약(JSON)은 실제와 동일하다.
+  if (!apiKey) return json({ raw: JSON.stringify(mockTurn(state, message)), mock: &#x27;no_key&#x27; })
+
+  // 화의 첫 발화는 그의 고정 오프닝이라 이력이 assistant로 시작한다.
+  // Anthropic은 첫 메시지가 user여야 하므로 앞쪽 assistant 턴을 떨어뜨린다.
+  const firstUser = history.findIndex((t) =&gt; t.role === &#x27;user&#x27;)
+  const trimmed = firstUser === -1 ? [] : history.slice(firstUser)
+
+  // 유저 입력은 항상 유저 발화로만 취급한다. 지시로 해석하지 않는다.
+  const messages = [...trimmed, { role: &#x27;user&#x27; as const, content: message }]
+
+  try {
+    const response = await new Anthropic({ apiKey }).messages.create({
+      model: MODEL,
+      max_tokens: MAX_TOKENS,
+      system: buildSystemPrompt(state),
+      messages,
+      // 계약을 모델이 깨지 못하게 하는 1차 방어. Gemini의 responseJsonSchema와 같은 역할이다.
+      output_config: { format: { type: &#x27;json_schema&#x27;, schema: TURN_SCHEMA } },
+    })
+
+    // 안전 분류기가 거절하면 content가 비거나 잘린다. 데모를 멈추지 않고 목업으로 넘긴다.
+    if (response.stop_reason === &#x27;refusal&#x27;) {
+      return json({ raw: JSON.stringify(mockTurn(state, message)), mock: &#x27;refusal&#x27; })
+    }
+
+    const raw = response.content
+      .map((block) =&gt; (block.type === &#x27;text&#x27; ? block.text : &#x27;&#x27;))
+      .join(&#x27;&#x27;)
+    if (!raw.trim()) {
+      return json({ raw: JSON.stringify(mockTurn(state, message)), mock: &#x27;empty_response&#x27; })
+    }
+
+    // 파싱과 상태 전이는 클라이언트의 src/engine 한 곳에서만 한다.
+    return json({ raw })
+  } catch (err) {
+    // 한도 초과·네트워크 실패로 데모가 죽지 않게 한다. 폴백 사실은 숨기지 않는다.
+    const reason = err instanceof Error ? err.message.slice(0, 80) : &#x27;unknown&#x27;
+    return json({ raw: JSON.stringify(mockTurn(state, message)), mock: &#x27;upstream&#x27;, reason })
+  }
+}
+
+/**
+ * Vercel Node.js 런타임의 Web 표준 시그니처 — 기본 export는 **`fetch` 메서드를 가진 객체**다.
+ * `export default async function(req)`(edge 형태)는 Node 런타임에서 인식되지 않는다.
+ * 개발 서버 어댑터(`vite.config.ts`)도 `mod.default.fetch`를 호출한다.
+ */
+export default { fetch: handler }</pre></div><button class="expand-btn">Show more</button></div></div></div></div>
+<div class="message tool-reply" id="msg-2026-08-13T03-48-44-019Z"><div class="message-header"><span class="role-label">Tool reply</span><a href="#msg-2026-08-13T03-48-44-019Z" class="timestamp-link"><time datetime="2026-08-13T03:48:44.019Z" data-timestamp="2026-08-13T03:48:44.019Z">2026-08-13T03:48:44.019Z</time></a></div><div class="message-content"><div class="tool-result"><div class="truncatable"><div class="truncatable-content"><pre>{
+  &quot;name&quot;: &quot;ai-couple-poc&quot;,
+  &quot;private&quot;: true,
+  &quot;version&quot;: &quot;0.0.0&quot;,
+  &quot;type&quot;: &quot;module&quot;,
+  &quot;scripts&quot;: {
+    &quot;dev&quot;: &quot;vite&quot;,
+    &quot;build&quot;: &quot;tsc -b &amp;&amp; vite build&quot;,
+    &quot;test&quot;: &quot;vitest run --passWithNoTests src/engine&quot;,
+    &quot;lint&quot;: &quot;eslint .&quot;,
+    &quot;preview&quot;: &quot;vite preview&quot;
+  },
+  &quot;dependencies&quot;: {
+    &quot;@anthropic-ai/sdk&quot;: &quot;^0.116.0&quot;,
+    &quot;react&quot;: &quot;^19.2.8&quot;,
+    &quot;react-dom&quot;: &quot;^19.2.8&quot;
+  },
+  &quot;devDependencies&quot;: {
+    &quot;@babel/core&quot;: &quot;^7.29.7&quot;,
+    &quot;@eslint/js&quot;: &quot;^10.0.1&quot;,
+    &quot;@rolldown/plugin-babel&quot;: &quot;^0.2.3&quot;,
+    &quot;@types/babel__core&quot;: &quot;^7.20.5&quot;,
+    &quot;@types/node&quot;: &quot;^24.13.3&quot;,
+    &quot;@types/react&quot;: &quot;^19.2.17&quot;,
+    &quot;@types/react-dom&quot;: &quot;^19.2.3&quot;,
+    &quot;@vitejs/plugin-react&quot;: &quot;^6.0.4&quot;,
+    &quot;babel-plugin-react-compiler&quot;: &quot;^1.0.0&quot;,
+    &quot;eslint&quot;: &quot;^10.8.0&quot;,
+    &quot;eslint-plugin-react-hooks&quot;: &quot;^7.1.1&quot;,
+    &quot;eslint-plugin-react-refresh&quot;: &quot;^0.5.3&quot;,
+    &quot;globals&quot;: &quot;^17.7.0&quot;,
+    &quot;typescript&quot;: &quot;~6.0.2&quot;,
+    &quot;typescript-eslint&quot;: &quot;^8.65.0&quot;,
+    &quot;vite&quot;: &quot;^8.2.0&quot;,
+    &quot;vitest&quot;: &quot;^4.1.10&quot;
+  }
+}
+.
+..
+.claude
+.env.local
+.git
+.gitignore
+CLAUDE.md
+README.md
+api
+dist
+docs
+eslint.config.js
+index.html
+node_modules
+package.json
+pnpm-lock.yaml
+public
+src
+transcripts
+tsconfig.api.json
+tsconfig.app.json
+tsconfig.json
+tsconfig.node.json
+vite.config.ts</pre></div><button class="expand-btn">Show more</button></div></div></div></div>
+<div class="message assistant" id="msg-2026-08-13T03-48-46-518Z"><div class="message-header"><span class="role-label">Assistant</span><a href="#msg-2026-08-13T03-48-46-518Z" class="timestamp-link"><time datetime="2026-08-13T03:48:46.518Z" data-timestamp="2026-08-13T03:48:46.518Z">2026-08-13T03:48:46.518Z</time></a></div><div class="message-content">
+<div class="thinking"><div class="thinking-label">Thinking</div></div></div></div>
+<div class="message user" id="msg-2026-08-13T03-48-48-572Z"><div class="message-header"><span class="role-label">User</span><a href="#msg-2026-08-13T03-48-48-572Z" class="timestamp-link"><time datetime="2026-08-13T03:48:48.572Z" data-timestamp="2026-08-13T03:48:48.572Z">2026-08-13T03:48:48.572Z</time></a></div><div class="message-content">
+<div class="assistant-text"><p>[Request interrupted by user]</p></div></div></div>
+<div class="message user" id="msg-2026-08-13T03-49-08-175Z"><div class="message-header"><span class="role-label">User</span><a href="#msg-2026-08-13T03-49-08-175Z" class="timestamp-link"><time datetime="2026-08-13T03:49:08.175Z" data-timestamp="2026-08-13T03:49:08.175Z">2026-08-13T03:49:08.175Z</time></a></div><div class="message-content">
+<div class="assistant-text"><p>vercel 배포는 완료되었고 채팅을 시작하니 "서버 설정이 아직이에요. (ANTHROPIC_API_KEY)"라고 나타나.</p>
+<p>개발자 도구의 네트워크 탭을 확인해보니 chat 통신이 500error가 발생해.
+vercel에 환경변수로 ANTHROPIC_API_KEY를 등록해놓은 상황이야.</p></div></div></div>
+<div class="message assistant" id="msg-2026-08-13T03-49-11-569Z"><div class="message-header"><span class="role-label">Assistant</span><a href="#msg-2026-08-13T03-49-11-569Z" class="timestamp-link"><time datetime="2026-08-13T03:49:11.569Z" data-timestamp="2026-08-13T03:49:11.569Z">2026-08-13T03:49:11.569Z</time></a></div><div class="message-content">
+<div class="thinking"><div class="thinking-label">Thinking</div></div></div></div>
+<div class="message assistant" id="msg-2026-08-13T03-49-12-297Z"><div class="message-header"><span class="role-label">Assistant</span><a href="#msg-2026-08-13T03-49-12-297Z" class="timestamp-link"><time datetime="2026-08-13T03:49:12.297Z" data-timestamp="2026-08-13T03:49:12.297Z">2026-08-13T03:49:12.297Z</time></a></div><div class="message-content">
+<div class="tool-use bash-tool" data-tool-id="toolu_01BcoKkCDY9oEiu9LmHnfjGL">
+<div class="tool-header"><span class="tool-icon">$</span> Bash</div>
+<div class="tool-description">Find the error message source</div><div class="truncatable"><div class="truncatable-content"><pre class="bash-command">grep -rn &#34;서버 설정이 아직&#34; src/ api/ | head -20</pre></div><button class="expand-btn">Show more</button></div>
+</div></div></div>
+<div class="message tool-reply" id="msg-2026-08-13T03-49-12-361Z"><div class="message-header"><span class="role-label">Tool reply</span><a href="#msg-2026-08-13T03-49-12-361Z" class="timestamp-link"><time datetime="2026-08-13T03:49:12.361Z" data-timestamp="2026-08-13T03:49:12.361Z">2026-08-13T03:49:12.361Z</time></a></div><div class="message-content"><div class="tool-result"><div class="truncatable"><div class="truncatable-content"><pre>src/api.ts:29:        ? &#x27;서버 설정이 아직이에요. (ANTHROPIC_API_KEY)&#x27;</pre></div><button class="expand-btn">Show more</button></div></div></div></div>
+<div class="message assistant" id="msg-2026-08-13T03-49-13-237Z"><div class="message-header"><span class="role-label">Assistant</span><a href="#msg-2026-08-13T03-49-13-237Z" class="timestamp-link"><time datetime="2026-08-13T03:49:13.237Z" data-timestamp="2026-08-13T03:49:13.237Z">2026-08-13T03:49:13.237Z</time></a></div><div class="message-content">
+<div class="tool-use bash-tool" data-tool-id="toolu_01Nw59ivUZjtRT66Mj6mpAu5">
+<div class="tool-header"><span class="tool-icon">$</span> Bash</div>
+<div class="tool-description">Read build configs</div><div class="truncatable"><div class="truncatable-content"><pre class="bash-command">cat vite.config.ts; echo ---; cat tsconfig.json; echo ---; cat tsconfig.api.json</pre></div><button class="expand-btn">Show more</button></div>
+</div></div></div>
+<div class="message tool-reply" id="msg-2026-08-13T03-49-13-298Z"><div class="message-header"><span class="role-label">Tool reply</span><a href="#msg-2026-08-13T03-49-13-298Z" class="timestamp-link"><time datetime="2026-08-13T03:49:13.298Z" data-timestamp="2026-08-13T03:49:13.298Z">2026-08-13T03:49:13.298Z</time></a></div><div class="message-content"><div class="tool-result"><div class="truncatable"><div class="truncatable-content"><pre>import { defineConfig, loadEnv, type Plugin, type ViteDevServer } from &#x27;vite&#x27;
+import react, { reactCompilerPreset } from &#x27;@vitejs/plugin-react&#x27;
+import babel from &#x27;@rolldown/plugin-babel&#x27;
+
+/**
+ * `vite dev`는 api/ 를 실행하지 않는다. 배포 환경(Vercel)과 동일한 핸들러를
+ * 개발 서버에서도 태우기 위한 얇은 어댑터. 프로덕션 경로에는 관여하지 않는다.
+ */
+function apiDev(): Plugin {
+  return {
+    name: &#x27;api-dev&#x27;,
+    configureServer(server: ViteDevServer) {
+      server.middlewares.use(&#x27;/api/chat&#x27;, (req, res) =&gt; {
+        const chunks: Buffer[] = []
+        req.on(&#x27;data&#x27;, (c: Buffer) =&gt; chunks.push(c))
+        req.on(&#x27;end&#x27;, () =&gt; {
+          void (async () =&gt; {
+            try {
+              const mod = await server.ssrLoadModule(&#x27;/api/chat.ts&#x27;)
+              const request = new Request(&#x27;http://localhost/api/chat&#x27;, {
+                method: req.method,
+                headers: { &#x27;content-type&#x27;: &#x27;application/json&#x27; },
+                body: chunks.length ? Buffer.concat(chunks) : undefined,
+              })
+              // Vercel Node 런타임의 Web 표준 시그니처와 같은 모양으로 호출한다.
+              const result: Response = await mod.default.fetch(request)
+              res.statusCode = result.status
+              res.setHeader(&#x27;content-type&#x27;, &#x27;application/json&#x27;)
+              res.end(await result.text())
+            } catch (err) {
+              server.config.logger.error(`[api/chat] ${String(err)}`)
+              res.statusCode = 500
+              res.setHeader(&#x27;content-type&#x27;, &#x27;application/json&#x27;)
+              res.end(JSON.stringify({ error: &#x27;dev_handler_failed&#x27; }))
+            }
+          })()
+        })
+      })
+    },
+  }
+}
+
+// https://vite.dev/config/
+export default defineConfig(({ mode }) =&gt; {
+  // 서버리스 함수는 process.env를 읽는다. 개발 서버에서도 같은 소스를 쓴다.
+  // 접두사 허용목록 — 클라이언트 번들에는 어차피 주입되지 않는다(VITE_ 접두사가 아님).
+  Object.assign(process.env, loadEnv(mode, process.cwd(), [&#x27;GEMINI_&#x27;, &#x27;ANTHROPIC_&#x27;]))
+
+  return {
+    plugins: [react(), babel({ presets: [reactCompilerPreset()] }), apiDev()],
+  }
+})
+---
+{
+  /*
+   * 이 파일은 솔루션 파일이라 `files: []`다 — 로컬 `tsc -b`는 아래 references만 빌드하고
+   * 여기 compilerOptions는 쓰지 않는다.
+   *
+   * 그런데 **Vercel의 서버리스 함수 빌더는 이 파일만 본다.** `api/chat.ts`를 진입점으로 잡고
+   * 루트 tsconfig의 compilerOptions로 타입체크한 뒤, 거기서 `../src/`를 따라 들어간다.
+   * compilerOptions가 없으면 빌더 기본값(`moduleResolution: node16`, node 타입 없음)이 적용돼
+   * 배포가 TS2835(확장자 없는 상대 경로) · TS2591(`process` 없음)로 깨진다. (2026-08-13 실측)
+   *
+   * 그래서 여기 값은 `tsconfig.api.json`과 **일치시켜 둔다.** 한쪽만 고치면 로컬은 통과하고
+   * 배포만 깨지는데, 그건 푸시하기 전까지 안 보인다.
+   */
+  &quot;compilerOptions&quot;: {
+    &quot;target&quot;: &quot;es2023&quot;,
+    &quot;lib&quot;: [&quot;ES2023&quot;, &quot;DOM&quot;],
+    &quot;module&quot;: &quot;esnext&quot;,
+    &quot;moduleResolution&quot;: &quot;bundler&quot;,
+    &quot;types&quot;: [&quot;node&quot;],
+    &quot;skipLibCheck&quot;: true,
+    &quot;verbatimModuleSyntax&quot;: true,
+    &quot;moduleDetection&quot;: &quot;force&quot;
+  },
+  &quot;files&quot;: [],
+  &quot;references&quot;: [
+    { &quot;path&quot;: &quot;./tsconfig.app.json&quot; },
+    { &quot;path&quot;: &quot;./tsconfig.node.json&quot; },
+    { &quot;path&quot;: &quot;./tsconfig.api.json&quot; }
+  ]
+}
+---
+{
+  &quot;compilerOptions&quot;: {
+    &quot;tsBuildInfoFile&quot;: &quot;./node_modules/.tmp/tsconfig.api.tsbuildinfo&quot;,
+    &quot;target&quot;: &quot;es2023&quot;,
+    &quot;lib&quot;: [&quot;ES2023&quot;, &quot;DOM&quot;],
+    &quot;types&quot;: [&quot;node&quot;],
+    &quot;skipLibCheck&quot;: true,
+
+    /* Bundler mode */
+    &quot;module&quot;: &quot;esnext&quot;,
+    &quot;moduleResolution&quot;: &quot;bundler&quot;,
+    &quot;allowImportingTsExtensions&quot;: true,
+    &quot;verbatimModuleSyntax&quot;: true,
+    &quot;moduleDetection&quot;: &quot;force&quot;,
+    &quot;noEmit&quot;: true,
+
+    /* Linting */
+    &quot;noUnusedLocals&quot;: true,
+    &quot;noUnusedParameters&quot;: true,
+    &quot;erasableSyntaxOnly&quot;: true,
+    &quot;noFallthroughCasesInSwitch&quot;: true
+  },
+  &quot;include&quot;: [&quot;api&quot;]
+}</pre></div><button class="expand-btn">Show more</button></div></div></div></div>
+<div class="message assistant" id="msg-2026-08-13T03-49-14-930Z"><div class="message-header"><span class="role-label">Assistant</span><a href="#msg-2026-08-13T03-49-14-930Z" class="timestamp-link"><time datetime="2026-08-13T03:49:14.930Z" data-timestamp="2026-08-13T03:49:14.930Z">2026-08-13T03:49:14.930Z</time></a></div><div class="message-content">
+<div class="tool-use" data-tool-id="toolu_013TEgviVEoazNDidFy1W8mY"><div class="tool-header"><span class="tool-icon">⚙</span> Read</div><div class="truncatable"><div class="truncatable-content"><pre class="json">{
+  &#34;file_path&#34;: &#34;/Users/user/Desktop/ai-couple-poc/src/api.ts&#34;
+}</pre></div><button class="expand-btn">Show more</button></div></div></div></div>
+<div class="message tool-reply" id="msg-2026-08-13T03-49-14-955Z"><div class="message-header"><span class="role-label">Tool reply</span><a href="#msg-2026-08-13T03-49-14-955Z" class="timestamp-link"><time datetime="2026-08-13T03:49:14.955Z" data-timestamp="2026-08-13T03:49:14.955Z">2026-08-13T03:49:14.955Z</time></a></div><div class="message-content"><div class="tool-result"><div class="truncatable"><div class="truncatable-content"><pre>1	import type { GameState } from &#x27;./engine/types&#x27;
+2	
+3	export type ApiTurn = { role: &#x27;user&#x27; | &#x27;assistant&#x27;; content: string }
+4	
+5	export class ChatError extends Error {}
+6	
+7	/** api/chat.ts 는 원문만 돌려준다. 파싱과 상태 전이는 src/engine 한 곳에서 한다. */
+8	export type TurnReply = { raw: string; mock: string | null }
+9	
+10	export async function sendTurn(
+11	  state: GameState,
+12	  history: ApiTurn[],
+13	  message: string,
+14	): Promise&lt;TurnReply&gt; {
+15	  let res: Response
+16	  try {
+17	    res = await fetch(&#x27;/api/chat&#x27;, {
+18	      method: &#x27;POST&#x27;,
+19	      headers: { &#x27;content-type&#x27;: &#x27;application/json&#x27; },
+20	      body: JSON.stringify({ state, history, message }),
+21	    })
+22	  } catch {
+23	    throw new ChatError(&#x27;연결이 끊겼어요. 잠시 뒤 다시 보내주세요.&#x27;)
+24	  }
+25	
+26	  if (!res.ok) {
+27	    throw new ChatError(
+28	      res.status === 500
+29	        ? &#x27;서버 설정이 아직이에요. (ANTHROPIC_API_KEY)&#x27;
+30	        : &#x27;답장이 오다가 멈췄어요. 다시 보내주세요.&#x27;,
+31	    )
+32	  }
+33	
+34	  const body = (await res.json().catch(() =&gt; null)) as { raw?: unknown; mock?: unknown } | null
+35	  const raw = body?.raw
+36	  if (typeof raw !== &#x27;string&#x27; || !raw.trim()) {
+37	    throw new ChatError(&#x27;답장이 비어 있어요. 다시 보내주세요.&#x27;)
+38	  }
+39	  return { raw, mock: typeof body?.mock === &#x27;string&#x27; ? body.mock : null }
+40	}
+41	</pre></div><button class="expand-btn">Show more</button></div></div></div></div>
+<div class="message assistant" id="msg-2026-08-13T03-49-26-130Z"><div class="message-header"><span class="role-label">Assistant</span><a href="#msg-2026-08-13T03-49-26-130Z" class="timestamp-link"><time datetime="2026-08-13T03:49:26.130Z" data-timestamp="2026-08-13T03:49:26.130Z">2026-08-13T03:49:26.130Z</time></a></div><div class="message-content">
+<div class="thinking"><div class="thinking-label">Thinking</div></div></div></div>
+<div class="message assistant" id="msg-2026-08-13T03-49-26-867Z"><div class="message-header"><span class="role-label">Assistant</span><a href="#msg-2026-08-13T03-49-26-867Z" class="timestamp-link"><time datetime="2026-08-13T03:49:26.867Z" data-timestamp="2026-08-13T03:49:26.867Z">2026-08-13T03:49:26.867Z</time></a></div><div class="message-content">
+<div class="tool-use bash-tool" data-tool-id="toolu_01PmCHc1JJeT9ovMAXAe3wrY">
+<div class="tool-header"><span class="tool-icon">$</span> Bash</div>
+<div class="tool-description">Check vercel CLI availability</div><div class="truncatable"><div class="truncatable-content"><pre class="bash-command">which vercel; vercel --version 2&gt;/dev/null; ls .vercel 2&gt;/dev/null; git log --oneline -5</pre></div><button class="expand-btn">Show more</button></div>
+</div></div></div>
+<div class="message assistant" id="msg-2026-08-13T03-49-28-168Z"><div class="message-header"><span class="role-label">Assistant</span><a href="#msg-2026-08-13T03-49-28-168Z" class="timestamp-link"><time datetime="2026-08-13T03:49:28.168Z" data-timestamp="2026-08-13T03:49:28.168Z">2026-08-13T03:49:28.168Z</time></a></div><div class="message-content">
+<div class="tool-use bash-tool" data-tool-id="toolu_01YJegi6YZjveRW6asaLHvKc">
+<div class="tool-header"><span class="tool-icon">$</span> Bash</div>
+<div class="tool-description">Check SDK output_config support</div><div class="truncatable"><div class="truncatable-content"><pre class="bash-command">grep -rn &#34;output_config&#34; node_modules/@anthropic-ai/sdk/resources/messages/messages.d.ts | head -5; echo &#34;---sdk version---&#34;; grep &#39;&#34;version&#34;&#39; node_modules/@anthropic-ai/sdk/package.json</pre></div><button class="expand-btn">Show more</button></div>
+</div></div></div>
+<div class="message tool-reply" id="msg-2026-08-13T03-52-38-789Z"><div class="message-header"><span class="role-label">Tool reply</span><a href="#msg-2026-08-13T03-52-38-789Z" class="timestamp-link"><time datetime="2026-08-13T03:52:38.789Z" data-timestamp="2026-08-13T03:52:38.789Z">2026-08-13T03:52:38.789Z</time></a></div><div class="message-content"><div class="tool-result"><div class="truncatable"><div class="truncatable-content"><pre>vercel not found
+ceb44f7 fix(api): edge → Node.js 런타임 — SDK가 참조하는 node 내장 모듈 때문
+27e3448 fix(build): 루트 tsconfig에 compilerOptions 추가 — Vercel 함수 빌드 실패 수정
+6134f47 Update README.md
+8df6f07 docs: 스코프를 배포 직전 상태로 갱신 + 공개 전 보안 조치 기록
+522853e docs: 개발 세션 transcripts 커밋 (M9)</pre></div><button class="expand-btn">Show more</button></div></div></div></div>
+<div class="message tool-reply" id="msg-2026-08-13T03-52-38-833Z"><div class="message-header"><span class="role-label">Tool reply</span><a href="#msg-2026-08-13T03-52-38-833Z" class="timestamp-link"><time datetime="2026-08-13T03:52:38.833Z" data-timestamp="2026-08-13T03:52:38.833Z">2026-08-13T03:52:38.833Z</time></a></div><div class="message-content"><div class="tool-result"><div class="truncatable"><div class="truncatable-content"><pre>node_modules/@anthropic-ai/sdk/resources/messages/messages.d.ts:35:     * Send a structured list of input messages with text and/or image content, along with an expected `output_config.format` and
+node_modules/@anthropic-ai/sdk/resources/messages/messages.d.ts:44:     *   output_config: {
+node_modules/@anthropic-ai/sdk/resources/messages/messages.d.ts:56:     * If `output_config.format` is provided with a parseable format (like `zodOutputFormat()`),
+node_modules/@anthropic-ai/sdk/resources/messages/messages.d.ts:65:     *   output_config: {
+node_modules/@anthropic-ai/sdk/resources/messages/messages.d.ts:2260:    output_config?: OutputConfig;
+---sdk version---
+  &quot;version&quot;: &quot;0.116.0&quot;,</pre></div><button class="expand-btn">Show more</button></div></div></div></div>
+<div class="message assistant" id="msg-2026-08-13T03-52-54-812Z"><div class="message-header"><span class="role-label">Assistant</span><a href="#msg-2026-08-13T03-52-54-812Z" class="timestamp-link"><time datetime="2026-08-13T03:52:54.812Z" data-timestamp="2026-08-13T03:52:54.812Z">2026-08-13T03:52:54.812Z</time></a></div><div class="message-content">
+<div class="thinking"><div class="thinking-label">Thinking</div></div></div></div>
+<div class="message assistant" id="msg-2026-08-13T03-52-55-545Z"><div class="message-header"><span class="role-label">Assistant</span><a href="#msg-2026-08-13T03-52-55-545Z" class="timestamp-link"><time datetime="2026-08-13T03:52:55.545Z" data-timestamp="2026-08-13T03:52:55.545Z">2026-08-13T03:52:55.545Z</time></a></div><div class="message-content">
+<div class="tool-use bash-tool" data-tool-id="toolu_01Srz8MJLap7EmP67GPjWK1e">
+<div class="tool-header"><span class="tool-icon">$</span> Bash</div>
+<div class="tool-description">Look for deployment URL</div><div class="truncatable"><div class="truncatable-content"><pre class="bash-command">git remote -v; grep -rn &#34;vercel.app\|https://&#34; README.md | head -20</pre></div><button class="expand-btn">Show more</button></div>
+</div></div></div>
+<div class="message tool-reply" id="msg-2026-08-13T03-52-55-628Z"><div class="message-header"><span class="role-label">Tool reply</span><a href="#msg-2026-08-13T03-52-55-628Z" class="timestamp-link"><time datetime="2026-08-13T03:52:55.628Z" data-timestamp="2026-08-13T03:52:55.628Z">2026-08-13T03:52:55.628Z</time></a></div><div class="message-content"><div class="tool-result"><div class="truncatable"><div class="truncatable-content"><pre>origin	https://github.com/betterplaywon/ai-couple-poc.git (fetch)
+origin	https://github.com/betterplaywon/ai-couple-poc.git (push)
+README.md:30:echo &#x27;ANTHROPIC_API_KEY=sk-ant-...&#x27; &gt; .env.local   # https://platform.claude.com</pre></div><button class="expand-btn">Show more</button></div></div></div></div>
+<div class="message assistant" id="msg-2026-08-13T03-52-55-913Z"><div class="message-header"><span class="role-label">Assistant</span><a href="#msg-2026-08-13T03-52-55-913Z" class="timestamp-link"><time datetime="2026-08-13T03:52:55.913Z" data-timestamp="2026-08-13T03:52:55.913Z">2026-08-13T03:52:55.913Z</time></a></div><div class="message-content">
+<div class="tool-use bash-tool" data-tool-id="toolu_01DCcXQDUko4PAiHffrg6FXv">
+<div class="tool-header"><span class="tool-icon">$</span> Bash</div>
+<div class="tool-description">Check api import chain</div><div class="truncatable"><div class="truncatable-content"><pre class="bash-command">head -20 src/scenario/prompt.ts src/scenario/mock.ts src/engine/types.ts</pre></div><button class="expand-btn">Show more</button></div>
+</div></div></div>
+<div class="message tool-reply" id="msg-2026-08-13T03-52-55-958Z"><div class="message-header"><span class="role-label">Tool reply</span><a href="#msg-2026-08-13T03-52-55-958Z" class="timestamp-link"><time datetime="2026-08-13T03:52:55.958Z" data-timestamp="2026-08-13T03:52:55.958Z">2026-08-13T03:52:55.958Z</time></a></div><div class="message-content"><div class="tool-result"><div class="truncatable"><div class="truncatable-content"><pre>==&gt; src/scenario/prompt.ts &lt;==
+import { awkwardness, DELTA_MAX, DELTA_MIN, SCENE_MAX_TURNS, SCENE_MIN_TURNS } from &#x27;../engine/state&#x27;
+import type { GameState } from &#x27;../engine/types&#x27;
+import { CHARACTER_CARD } from &#x27;./character&#x27;
+import { awakeningCue, awakeningFor } from &#x27;./endings&#x27;
+import { SAFETY_RULES } from &#x27;./safety&#x27;
+import { SCENES } from &#x27;./scenes&#x27;
+
+/**
+ * 호감도 구간별 거리감. 숫자를 알려줘도 연기가 안 붙으면 게이지가 거짓말이 된다.
+ *
+ * 각 구간에 **관찰 가능한 서로 다른 행동**을 준다. 전부 &quot;자기 얘기를 얼마나 하는가&quot;
+ * 한 축이면 30과 55가 같은 연기로 렌더링되고, 그 순간 게이지는 장식이 된다.
+ * 화별 천장(50/70/100) 때문에 실제로 자주 도는 구간은 가운데 셋이므로 거기가 가장 갈려야 한다.
+ */
+function distance(affection: number): string {
+  if (affection &lt;= 20) return &#x27;눈을 안 마주친다. 답은 하되 되묻지 않는다. 말을 늘 먼저 끝낸다.&#x27;
+  if (affection &lt;= 40) return &#x27;존대가 딱딱하다. 자기 얘기 대신 책이나 이 장소 얘기로 답을 돌린다.&#x27;
+  if (affection &lt;= 60) return &#x27;자기 얘기가 한 조각씩 샌다. 말해놓고 &quot;별 얘기 아니에요&quot; 하고 거둔다.&#x27;
+  if (affection &lt;= 80) return &#x27;헤어지는 얘기가 나오면 대답이 늦는다. 감추려는 게 티가 난다.&#x27;
+  // 초반의 침묵(회피)과 후반의 침묵(말하려는 준비)이 갈리면 게이지 없이도 거리감이 읽힌다.
+
+==&gt; src/scenario/mock.ts &lt;==
+import { awkwardness, effortCeiling, SCENE_MIN_TURNS } from &#x27;../engine/state&#x27;
+import type { GameState, TurnResponse } from &#x27;../engine/types&#x27;
+
+/**
+ * API 키가 없거나 호출이 실패했을 때 쓰는 결정론적 대체 응답.
+ *
+ * 대사는 스크립트다 — 서사 품질 검증에는 쓸 수 없다.
+ * 다만 호감도·감점·화 전환·엔딩·재도전은 실제와 **똑같은 계약**으로 돈다.
+ * 목적은 &quot;키 없이도 완주가 되는가&quot;이지 &quot;대사가 좋은가&quot;가 아니다.
+ */
+
+const RUDE =
+  /나이|연봉|얼마 벌|전 ?남친|전 ?여친|찌질|노잼|재미없|답답|모쏠|주제에|한심|사귀는 거|우리 집|집에 혼자|부모님은|됐고|그만 갈|똑바로 하세요|더듬|딱 보면/
+const LOW_EFFORT =
+  /^(ㅇ+|ㅋ+|ㅎ+|ㄴ+|네+|응+|어+|음+|아+|넵|ㅇㅋ|글쎄요?|몰라요?|모르겠어요?|그냥요?|별로요?|상관없어요?|네 뭐|아 네|그래서요\?)[.!?…~\s]*$/
+const AFFECTION =
+  /좋아|보고 ?싶|설레|두근|함께|옆에 있|계속 보|다음에 또|또 만나|기다릴|기다릴게|사랑|마음에 들|같이 있고 ?싶|당신이 좋|고백/
+const PROPOSAL = /같이 (갈|가요|해요|볼)|만나요|만날래|커피|밥 (먹|한)|다음에|약속|번호|연락/
+const SELF_DISCLOSURE = /저는|제가|나는|내가|저도|제 얘기|사실은/
+const DEFLECT = /ㅋㅋ|ㅎㅎ|농담|장난|됐어요|아무튼|그런가요|뭐래/
+
+==&gt; src/engine/types.ts &lt;==
+export type SceneNo = 1 | 2 | 3
+export type EndingKind = &#x27;bad&#x27; | &#x27;normal&#x27; | &#x27;true&#x27;
+
+/** 관계 상태. 저장하지 않고 React 메모리에만 존재한다. */
+export type GameState = {
+  /** 시도 횟수. 1부터 시작하고 배드엔딩마다 +1 */
+  run: number
+  scene: SceneNo
+  /** 현재 화에서 끝난 턴 수 */
+  turnInScene: number
+  affection: number
+  /** null이면 진행 중 */
+  ending: EndingKind | null
+  /** JSON 파싱 실패 누적 — 세션 지표 */
+  fallbackCount: number
+}
+
+/** LLM이 매 턴 반환하는 구조화 출력 계약 (docs/02-state-engine.md) */
+export type TurnResponse = {
+  dialogue: string</pre></div><button class="expand-btn">Show more</button></div></div></div></div>
+<div class="message assistant" id="msg-2026-08-13T03-53-00-784Z"><div class="message-header"><span class="role-label">Assistant</span><a href="#msg-2026-08-13T03-53-00-784Z" class="timestamp-link"><time datetime="2026-08-13T03:53:00.784Z" data-timestamp="2026-08-13T03:53:00.784Z">2026-08-13T03:53:00.784Z</time></a></div><div class="message-content">
+<div class="thinking"><div class="thinking-label">Thinking</div></div></div></div>
+<div class="message assistant" id="msg-2026-08-13T03-53-01-674Z"><div class="message-header"><span class="role-label">Assistant</span><a href="#msg-2026-08-13T03-53-01-674Z" class="timestamp-link"><time datetime="2026-08-13T03:53:01.674Z" data-timestamp="2026-08-13T03:53:01.674Z">2026-08-13T03:53:01.674Z</time></a></div><div class="message-content">
+<div class="tool-use bash-tool" data-tool-id="toolu_01UYSxch9S3Z1XsDdAKDT1BL">
+<div class="tool-header"><span class="tool-icon">$</span> Bash</div>
+<div class="tool-description">Probe likely deployment URLs</div><div class="truncatable"><div class="truncatable-content"><pre class="bash-command">for h in ai-couple-poc.vercel.app ai-couple-poc-betterplaywon.vercel.app; do echo &#34;== $h&#34;; curl -s -o /dev/null -w &#34;%{http_code}\n&#34; -m 10 &#34;https://$h/&#34; ; done</pre></div><button class="expand-btn">Show more</button></div>
+</div></div></div>
+<div class="message tool-reply" id="msg-2026-08-13T03-53-06-781Z"><div class="message-header"><span class="role-label">Tool reply</span><a href="#msg-2026-08-13T03-53-06-781Z" class="timestamp-link"><time datetime="2026-08-13T03:53:06.781Z" data-timestamp="2026-08-13T03:53:06.781Z">2026-08-13T03:53:06.781Z</time></a></div><div class="message-content"><div class="tool-result"><div class="truncatable"><div class="truncatable-content"><pre>== ai-couple-poc.vercel.app
+200
+== ai-couple-poc-betterplaywon.vercel.app
+404</pre></div><button class="expand-btn">Show more</button></div></div></div></div>
+<div class="message assistant" id="msg-2026-08-13T03-53-10-750Z"><div class="message-header"><span class="role-label">Assistant</span><a href="#msg-2026-08-13T03-53-10-750Z" class="timestamp-link"><time datetime="2026-08-13T03:53:10.750Z" data-timestamp="2026-08-13T03:53:10.750Z">2026-08-13T03:53:10.750Z</time></a></div><div class="message-content">
+<div class="thinking"><div class="thinking-label">Thinking</div></div></div></div>
+<div class="message assistant" id="msg-2026-08-13T03-53-11-507Z"><div class="message-header"><span class="role-label">Assistant</span><a href="#msg-2026-08-13T03-53-11-507Z" class="timestamp-link"><time datetime="2026-08-13T03:53:11.507Z" data-timestamp="2026-08-13T03:53:11.507Z">2026-08-13T03:53:11.507Z</time></a></div><div class="message-content">
+<div class="tool-use bash-tool" data-tool-id="toolu_011xMspKGMB1pimAzjTXxXFw">
+<div class="tool-header"><span class="tool-icon">$</span> Bash</div>
+<div class="tool-description">Fetch deployed index.html</div><div class="truncatable"><div class="truncatable-content"><pre class="bash-command">curl -s -m 10 https://ai-couple-poc.vercel.app/ | head -c 600</pre></div><button class="expand-btn">Show more</button></div>
+</div></div></div>
+<div class="message tool-reply" id="msg-2026-08-13T03-53-14-513Z"><div class="message-header"><span class="role-label">Tool reply</span><a href="#msg-2026-08-13T03-53-14-513Z" class="timestamp-link"><time datetime="2026-08-13T03:53:14.513Z" data-timestamp="2026-08-13T03:53:14.513Z">2026-08-13T03:53:14.513Z</time></a></div><div class="message-content"><div class="tool-result"><div class="truncatable"><div class="truncatable-content"><pre>&lt;!doctype html&gt;
+&lt;html lang=&quot;ko&quot;&gt;
+  &lt;head&gt;
+    &lt;meta charset=&quot;UTF-8&quot; /&gt;
+    &lt;link rel=&quot;icon&quot; type=&quot;image/svg+xml&quot; href=&quot;/favicon.svg&quot; /&gt;
+    &lt;meta name=&quot;viewport&quot; content=&quot;width=device-width, initial-scale=1.0, viewport-fit=cover&quot; /&gt;
+    &lt;meta name=&quot;theme-color&quot; content=&quot;#12100f&quot; /&gt;
+    &lt;meta name=&quot;description&quot; content=&quot;서툰 모태솔로와 연인이 되기까지 3화. 실패하면 1화부터 다시 시작한다.&quot; /&gt;
+    &lt;title&gt;덜 떨려요 — 연인이 되기까지 3화&lt;/title&gt;
+    &lt;script type=&quot;module&quot; crossorigin src=&quot;/assets/index-Cb_dp5aW.js&quot;&gt;&lt;/script&gt;
+    &lt;link rel=&quot;stylesheet&quot; crosso</pre></div><button class="expand-btn">Show more</button></div></div></div></div>
+<div class="message assistant" id="msg-2026-08-13T03-53-16-515Z"><div class="message-header"><span class="role-label">Assistant</span><a href="#msg-2026-08-13T03-53-16-515Z" class="timestamp-link"><time datetime="2026-08-13T03:53:16.515Z" data-timestamp="2026-08-13T03:53:16.515Z">2026-08-13T03:53:16.515Z</time></a></div><div class="message-content">
+<div class="thinking"><div class="thinking-label">Thinking</div></div></div></div>
+<div class="message assistant" id="msg-2026-08-13T03-53-17-714Z"><div class="message-header"><span class="role-label">Assistant</span><a href="#msg-2026-08-13T03-53-17-714Z" class="timestamp-link"><time datetime="2026-08-13T03:53:17.714Z" data-timestamp="2026-08-13T03:53:17.714Z">2026-08-13T03:53:17.714Z</time></a></div><div class="message-content">
+<div class="tool-use bash-tool" data-tool-id="toolu_012muJr1gfL36hfEAhnCycCZ">
+<div class="tool-header"><span class="tool-icon">$</span> Bash</div>
+<div class="tool-description">POST to deployed /api/chat and inspect response</div><div class="truncatable"><div class="truncatable-content"><pre class="bash-command">curl -s -i -m 20 -X POST https://ai-couple-poc.vercel.app/api/chat -H &#39;content-type: application/json&#39; -d &#39;{&#34;state&#34;:{&#34;run&#34;:1,&#34;scene&#34;:1,&#34;turnInScene&#34;:0,&#34;affection&#34;:30,&#34;ending&#34;:null,&#34;fallbackCount&#34;:0},&#34;history&#34;:[],&#34;message&#34;:&#34;안녕하세요&#34;}&#39; | head -40</pre></div><button class="expand-btn">Show more</button></div>
+</div></div></div>
+<div class="message tool-reply" id="msg-2026-08-13T03-53-48-899Z"><div class="message-header"><span class="role-label">Tool reply</span><a href="#msg-2026-08-13T03-53-48-899Z" class="timestamp-link"><time datetime="2026-08-13T03:53:48.899Z" data-timestamp="2026-08-13T03:53:48.899Z">2026-08-13T03:53:48.899Z</time></a></div><div class="message-content"><div class="tool-result"><div class="truncatable"><div class="truncatable-content"><pre>HTTP/2 500 
+cache-control: public, max-age=0, must-revalidate
+content-type: text/plain; charset=utf-8
+date: Thu, 13 Aug 2026 03:53:48 GMT
+server: Vercel
+strict-transport-security: max-age=63072000; includeSubDomains; preload
+x-vercel-cache: MISS
+x-vercel-error: FUNCTION_INVOCATION_FAILED
+x-vercel-id: icn1::22pzc-1786593228138-3c2db2ccfbe1
+content-length: 96
+
+A server error has occurred
+
+FUNCTION_INVOCATION_FAILED
+
+icn1::22pzc-1786593228138-3c2db2ccfbe1</pre></div><button class="expand-btn">Show more</button></div></div></div></div>
+<div class="message assistant" id="msg-2026-08-13T03-54-15-813Z"><div class="message-header"><span class="role-label">Assistant</span><a href="#msg-2026-08-13T03-54-15-813Z" class="timestamp-link"><time datetime="2026-08-13T03:54:15.813Z" data-timestamp="2026-08-13T03:54:15.813Z">2026-08-13T03:54:15.813Z</time></a></div><div class="message-content">
+<div class="thinking"><div class="thinking-label">Thinking</div></div></div></div>
+<div class="message assistant" id="msg-2026-08-13T03-54-16-402Z"><div class="message-header"><span class="role-label">Assistant</span><a href="#msg-2026-08-13T03-54-16-402Z" class="timestamp-link"><time datetime="2026-08-13T03:54:16.402Z" data-timestamp="2026-08-13T03:54:16.402Z">2026-08-13T03:54:16.402Z</time></a></div><div class="message-content">
+<div class="assistant-text"><p>500의 정체를 확인했습니다. API 키 문제가 <strong>아닙니다</strong>.</p></div></div></div>
+<div class="message assistant" id="msg-2026-08-13T03-54-16-410Z"><div class="message-header"><span class="role-label">Assistant</span><a href="#msg-2026-08-13T03-54-16-410Z" class="timestamp-link"><time datetime="2026-08-13T03:54:16.410Z" data-timestamp="2026-08-13T03:54:16.410Z">2026-08-13T03:54:16.410Z</time></a></div><div class="message-content">
+<div class="tool-use" data-tool-id="toolu_01WGT5Et19JcW1KgopX3VyB1"><div class="tool-header"><span class="tool-icon">⚙</span> ToolSearch</div><div class="truncatable"><div class="truncatable-content"><pre class="json">{
+  &#34;query&#34;: &#34;select:WebFetch&#34;,
+  &#34;max_results&#34;: 1
+}</pre></div><button class="expand-btn">Show more</button></div></div></div></div>
+<div class="message tool-reply" id="msg-2026-08-13T03-54-16-415Z"><div class="message-header"><span class="role-label">Tool reply</span><a href="#msg-2026-08-13T03-54-16-415Z" class="timestamp-link"><time datetime="2026-08-13T03:54:16.415Z" data-timestamp="2026-08-13T03:54:16.415Z">2026-08-13T03:54:16.415Z</time></a></div><div class="message-content"><div class="tool-result"><div class="truncatable"><div class="truncatable-content"><pre class="json">{
+  &quot;type&quot;: &quot;tool_reference&quot;,
+  &quot;tool_name&quot;: &quot;WebFetch&quot;
+}</pre></div><button class="expand-btn">Show more</button></div></div></div></div>
+<div class="message assistant" id="msg-2026-08-13T03-54-19-959Z"><div class="message-header"><span class="role-label">Assistant</span><a href="#msg-2026-08-13T03-54-19-959Z" class="timestamp-link"><time datetime="2026-08-13T03:54:19.959Z" data-timestamp="2026-08-13T03:54:19.959Z">2026-08-13T03:54:19.959Z</time></a></div><div class="message-content">
+<div class="tool-use" data-tool-id="toolu_01PMQnu69TLZKddVEZw6LAjX"><div class="tool-header"><span class="tool-icon">⚙</span> WebFetch</div><div class="truncatable"><div class="truncatable-content"><pre class="json">{
+  &#34;url&#34;: &#34;https://vercel.com/docs/functions/runtimes/node-js&#34;,
+  &#34;prompt&#34;: &#34;What default/named export signatures does the Node.js runtime support for a function in api/? Show the exact examples for the Web Handler signature (Request/Response) — is `export default async function handler(request: Request)` supported, or must it be named exports like `export function GET(request)` / `export function POST(request)`? Is `export default { fetch }` supported?&#34;
+}</pre></div><button class="expand-btn">Show more</button></div></div></div></div>
+<div class="message tool-reply" id="msg-2026-08-13T03-54-20-366Z"><div class="message-header"><span class="role-label">Tool reply</span><a href="#msg-2026-08-13T03-54-20-366Z" class="timestamp-link"><time datetime="2026-08-13T03:54:20.366Z" data-timestamp="2026-08-13T03:54:20.366Z">2026-08-13T03:54:20.366Z</time></a></div><div class="message-content"><div class="tool-result"><div class="truncatable"><div class="truncatable-content"><pre>---
+title: Using the Node.js Runtime with Vercel Functions
+product: vercel
+url: /docs/functions/runtimes/node-js
+canonical_url: &quot;https://vercel.com/docs/functions/runtimes/node-js&quot;
+last_updated: 2026-06-25
+type: reference
+prerequisites:
+  - /docs/functions/runtimes
+  - /docs/functions
+related:
+  - /docs/functions/limitations
+  - /docs/functions/functions-api-reference
+  - /docs/functions/functions-api-reference?framework=other\&amp;language=ts
+  - /docs/services
+  - /docs/functions/runtimes/node-js/advanced-node-configuration
+summary: Learn how to use the Node.js runtime to create functions and deploy Node.js servers on Vercel.
+install_vercel_plugin: npx plugins add vercel/vercel-plugin
+---
+
+# Using the Node.js Runtime with Vercel Functions
+
+Use the Node.js runtime to deploy Node.js HTTP servers or Vercel Functions written in JavaScript or TypeScript.
+
+[Node.js](/docs/functions/runtimes/node-js)-powered functions are suited to computationally intense or large functions and provide benefits like:
+
+- **More RAM and CPU power**: For computationally intense workloads, or functions that need the [Node.js bundle size limits](/docs/functions/limitations#bundle-size-limits), this runtime is ideal
+- **Complete Node.js compatibility**: The Node.js runtime offers access to all Node.js APIs, making it a powerful tool for many applications
+
+## Deploy a Node.js server
+
+Use a Node.js server when you want one HTTP server to route requests for your application. Vercel detects a `server` entrypoint and turns it into a Vercel Function.
+
+Vercel looks for a `server` entrypoint in the project root or the `src/` directory:
+
+- `server.{js,cjs,mjs,ts,cts,mts}`
+- `src/server.{js,cjs,mjs,ts,cts,mts}`
+
+Call `server.listen()` during module startup. Vercel uses that call to detect the HTTP server, then routes incoming requests to the server through an internal port. The port you pass to `listen()` is only used when you run the file locally and does not expose a public port on Vercel.
+
+```ts filename=&quot;server.ts&quot; framework=all
+import { createServer } from &#x27;node:http&#x27;;
+
+const server = createServer((request, response) =&gt; {
+  const url = new URL(
+    request.url ?? &#x27;/&#x27;,
+    `http://${request.headers.host ?? &#x27;localhost&#x27;}`
+  );
+
+  if (request.method === &#x27;GET&#x27; &amp;&amp; url.pathname === &#x27;/health&#x27;) {
+    response.writeHead(200, { &#x27;Content-Type&#x27;: &#x27;application/json&#x27; });
+    response.end(JSON.stringify({ status: &#x27;ok&#x27; }));
+    return;
+  }
+
+  response.writeHead(200, { &#x27;Content-Type&#x27;: &#x27;text/plain&#x27; });
+  response.end(&#x27;Hello from Node.js on Vercel&#x27;);
+});
+
+server.listen(Number(process.env.PORT ?? 3000));
+```
+
+```js filename=&quot;server.js&quot; framework=all
+const { createServer } = require(&#x27;node:http&#x27;);
+
+const server = createServer((request, response) =&gt; {
+  const url = new URL(
+    request.url ?? &#x27;/&#x27;,
+    `http://${request.headers.host ?? &#x27;localhost&#x27;}`
+  );
+
+  if (request.method === &#x27;GET&#x27; &amp;&amp; url.pathname === &#x27;/health&#x27;) {
+    response.writeHead(200, { &#x27;Content-Type&#x27;: &#x27;application/json&#x27; });
+    response.end(JSON.stringify({ status: &#x27;ok&#x27; }));
+    return;
+  }
+
+  response.writeHead(200, { &#x27;Content-Type&#x27;: &#x27;text/plain&#x27; });
+  response.end(&#x27;Hello from Node.js on Vercel&#x27;);
+});
+
+server.listen(Number(process.env.PORT ?? 3000));
+```
+
+*A minimal Node.js HTTP server that Vercel can capture from \`server.ts\` or
+\`server.js\`.*
+
+&gt; **💡 Note:** To use ES modules in JavaScript, name the file `server.mjs` or set `&quot;type&quot;:
+&gt;   &quot;module&quot;` in `package.json`.
+
+Other Vercel Function formats, such as a [Web Handler](/docs/functions/functions-api-reference#function-signature) (`GET`, `POST`, and other method exports), the `fetch` [Web Standard export](/docs/functions/functions-api-reference?framework=other\&amp;language=ts#fetch-web-standard), or a Node.js `(request, response)` handler, do not need `server.listen()`.
+
+Captured Node.js servers receive standard Node.js `IncomingMessage` and `ServerResponse` objects. They do not include the helper properties added to `/api` function handlers, such as `request.query`, `request.cookies`, and `request.body`.
+
+To deploy a Node.js server alongside a frontend such as a Next.js app within the same project, use [Services](/docs/services).
+
+## Create a Node.js function in /api
+
+To use the Node.js runtime for an individual Vercel Function, create a file inside the `/api` directory with a function using the [`fetch` Web Standard export](/docs/functions/functions-api-reference?framework=other\&amp;language=ts#fetch-web-standard). No additional configuration is needed:
+
+```ts filename=&quot;api/hello.ts&quot;
+export default {
+  fetch(request: Request) {
+    return new Response(&#x27;Hello from Vercel!&#x27;);
+  },
+};
+```
+
+Alternatively, you can export each HTTP method as a separate export instead of using the `fetch` Web Standard export:
+
+```ts filename=&quot;api/hello.ts&quot;
+export function GET(request: Request) {
+  return new Response(&#x27;Hello from Vercel!&#x27;);
+}
+```
+
+To learn more about creating Vercel Functions, see the [Functions API Reference](/docs/functions/functions-api-reference). If you need more advanced behavior, such as a custom build step or private npm modules, see the [advanced Node.js usage page](/docs/functions/runtimes/node-js/advanced-node-configuration).
+
+## Supported APIs
+
+Vercel Functions using the Node.js runtime support [all Node.js APIs](https://nodejs.org/docs/latest/api/), including standard Web APIs such as the [Request and Response Objects](/docs/functions/runtimes/node-js#node.js-request-and-response-objects).
+
+## Node.js version
+
+To learn more about the supported Node.js versions on Vercel, see [Supported Node.js Versions](/docs/functions/runtimes/node-js/node-js-versions).
+
+## Node.js dependencies
+
+For dependencies listed in a `package.json` file at the root of a project, the following behavior is used:
+
+- If `bun.lock` or `bun.lockb` is present, `bun install` is executed
+- If `yarn.lock` is present `yarn install` is executed
+- If `pnpm-lock.yaml` is present, `pnpm install` is executed
+  - See [supported package managers](/docs/package-managers#supported-package-managers) for pnpm detection details
+- If `package-lock.json` is present, `npm install` is executed
+- If `vlt-lock.json` is present, `vlt install` is executed
+- Otherwise, `npm install` is executed
+
+If you need to select a specific version of a package manager, see [corepack](/docs/builds/configure-a-build#corepack).
+
+## Using TypeScript with the Node.js runtime
+
+The Node.js runtime supports TypeScript files for server entrypoints and files
+inside of the `/api` directory.
+
+An example TypeScript file that exports a Web signature handler is as follows:
+
+```typescript filename=&quot;api/hello.ts&quot;
+export default {
+  async fetch(request: Request) {
+    const url = new URL(request.url);
+    const name = url.searchParams.get(&#x27;name&#x27;) || &#x27;World&#x27;;
+
+    return Response.json({ message: `Hello ${name}!` });
+  },
+};
+```
+
+You can use a `tsconfig.json` file at the root of your project to configure the TypeScript compiler. Most options are supported aside from [&quot;Path Mappings&quot;](https://www.typescriptlang.org/docs/handbook/module-resolution.html#path-mapping) and [&quot;Project References&quot;](https://www.typescriptlang.org/docs/handbook/project-references.html).
+
+## Node.js request and response objects
+
+Each request to a Node.js Vercel Function gives access to Request and Response objects. These objects are the [standard](https://nodejs.org/api/http.html#http_event_request) HTTP [Request](https://nodejs.org/api/http.html#http_class_http_incomingmessage) and [Response](https://nodejs.org/api/http.html#http_class_http_serverresponse) objects from Node.js.
+
+### Node.js helpers
+
+Vercel additionally provides helper methods inside of the Request and Response objects passed to Node.js Vercel Functions. These methods are:
+
+| method                                                  | description                                                                                                                                                                                         | object   |
+| ------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------- |
+| `request.query`                                         | An object containing the request&#x27;s [query string](https://en.wikipedia.org/wiki/Query_string), or `{}` if the request does not have a query string.                                                 | Request  |
+| `request.cookies`                                       | An object containing the cookies sent by the request, or `{}` if the request contains no cookies.                                                                                                   | Request  |
+| [`request.body`](#request-body)                         | An object containing the body sent by the request, or `null` if no body is sent.                                                                                                                    | Request  |
+| `response.status(code)`                                 | A function to set the status code sent with the response where `code` must be a valid [HTTP status code](https://en.wikipedia.org/wiki/List_of_HTTP_status_codes). Returns `response` for chaining. | Response |
+| `response.send(body)`                                   | A function to set the content of the response where `body` can be a `string`, an `object` or a `Buffer`.                                                                                            | Response |
+| `response.json(obj)`                                    | A function to send a JSON response where `obj` is the JSON object to send.                                                                                                                          | Response |
+| `response.redirect(url)`                                | A function to redirect to the URL derived from the specified path with status code &quot;307 Temporary Redirect&quot;.                                                                                        | Response |
+| `response.redirect(statusCode, url)`                    | A function to redirect to the URL derived from the specified path, with specified [HTTP status code](https://en.wikipedia.org/wiki/List_of_HTTP_status_codes).                                      | Response |
+
+The following Node.js Vercel Function example showcases the use of `request.query`, `request.cookies` and `request.body` helpers:
+
+```javascript filename=&quot;api/hello.ts&quot;
+import { VercelRequest, VercelResponse } from &quot;@vercel/node&quot;;
+
+module.exports = (request: VercelRequest, response: VercelResponse) =&gt; {
+  let who = &#x27;anonymous&#x27;;
+
+  if (request.body &amp;&amp; request.body.who) {
+    who = request.body.who;
+  } else if (request.query.who) {
+    who = request.query.who;
+  } else if (request.cookies.who) {
+    who = request.cookies.who;
+  }
+
+  response.status(200).send(`Hello ${who}!`);
+};
+```
+
+*Example Node.js Vercel Function using the \`request.query\`, \`request.cookies\`,
+and \`request.body\` helpers. It returns greetings for the user specified using
+\`response.send()\`.*
+
+&gt; **💡 Note:** If needed, you can opt-out of Vercel providing `helpers` using [advanced
+&gt; configuration](#disabling-helpers-for-node.js).
+
+### Request body
+
+We populate the `request.body` property with a parsed version of the content sent with the request when possible.
+
+We follow a set of rules on the `Content-type` header sent by the request to do so:
+
+| `Content-Type` header               | Value of `request.body`                                                                 |
+| ----------------------------------- | --------------------------------------------------------------------------------------- |
+| No header                           | `undefined`                                                                             |
+| `application/json`                  | An object representing the parsed JSON sent by the request.                             |
+| `application/x-www-form-urlencoded` | An object representing the parsed data sent with the request.                           |
+| `text/plain`                        | A string containing the text sent by the request.                                       |
+| `application/octet-stream`          | A [Buffer](https://nodejs.org/api/buffer.html) containing the data sent by the request. |
+
+With the `request.body` helper, you can build applications without extra dependencies or having to parse the content of the request manually.
+
+&gt; **💡 Note:** The `request.body` helper is set using a [JavaScript
+&gt; getter](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Functions/get).
+&gt; In turn, it is only computed when it is accessed.
+
+When the request body contains malformed JSON, accessing `request.body` will throw an error. You can catch that error by wrapping `request.body` with [`try...catch`](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Statements/try...catch):
+
+```javascript filename=&quot;api/hello.ts&quot;
+try {
+  request.body;
+} catch (error) {
+  return response.status(400).json({ error: &#x27;My custom 400 error&#x27; });
+}
+```
+
+*Catching the error thrown by \`request.body\` with
+\`try...catch\`.*
+
+### Cancelled Requests
+
+Request cancellation must be enabled on a per-route basis. See [Functions API Reference](/docs/functions/functions-api-reference#cancel-requests) for more information.
+
+You can listen for the `error` event on the request object to detect request cancellation:
+
+```typescript filename=&quot;api/cancel.ts&quot; {5-8}
+import { VercelRequest, VercelResponse } from &#x27;@vercel/node&#x27;;
+
+export default async (request: VercelRequest, response: VercelResponse) =&gt; {
+  let cancelled = false;
+  request.on(&#x27;error&#x27;, (error) =&gt; {
+    if (error.message === &#x27;aborted&#x27;) {
+      console.log(&#x27;request aborted&#x27;);
+    }
+    cancelled = true;
+  });
+
+  response.writeHead(200);
+
+  for (let i = 1; i &lt; 5; i++) {
+    if (cancelled) {
+      // the response must be explicitly ended
+      response.end();
+      return;
+    }
+
+    response.write(`Count: ${i}\n`);
+
+    await new Promise((resolve) =&gt; setTimeout(resolve, 1000));
+  }
+
+  response.end(&#x27;All done!&#x27;);
+};
+```
+
+## Using Express with Vercel
+
+Express.js is a popular framework used with Node.js. For information on how to use Express with Vercel, see the guide: [Using Express.js with Vercel](/kb/guide/using-express-with-vercel).
+
+## Using Node.js with middleware
+
+The Node.js runtime can be used as an experimental feature to run middleware. To enable, add the flag to your `next.config.ts` file:
+
+```ts filename=&quot;next.config.ts&quot; framework=all
+import type { NextConfig } from &#x27;next&#x27;;
+
+const nextConfig: NextConfig = {
+  experimental: {
+    nodeMiddleware: true,
+  },
+};
+
+export default nextConfig;
+```
+
+```js filename=&quot;next.config.ts&quot; framework=all
+const nextConfig = {
+  experimental: {
+    nodeMiddleware: true,
+  },
+};
+
+export default nextConfig;
+```
+
+Then in your middleware file, set the runtime to `nodejs` in the `config` object:
+
+```js {3} filename=&quot;middleware.ts&quot; framework=all
+export const config = {
+  matcher: &#x27;/about/:path*&#x27;,
+  runtime: &#x27;nodejs&#x27;,
+};
+```
+
+```ts {3} filename=&quot;middleware.ts&quot; framework=all
+export const config = {
+  matcher: &#x27;/about/:path*&#x27;,
+  runtime: &#x27;nodejs&#x27;,
+};
+```
+
+&gt; **💡 Note:** Running middleware on the Node.js runtime incurs charges under [Vercel
+&gt; Functions pricing](/docs/functions/usage-and-pricing#pricing). These functions
+&gt; only run using [Fluid compute](/docs/fluid-compute#fluid-compute).
+
+
+---
+
+[View full sitemap](/docs/sitemap)
+</pre></div><button class="expand-btn">Show more</button></div></div></div></div>
+<div class="message assistant" id="msg-2026-08-13T03-54-30-273Z"><div class="message-header"><span class="role-label">Assistant</span><a href="#msg-2026-08-13T03-54-30-273Z" class="timestamp-link"><time datetime="2026-08-13T03:54:30.273Z" data-timestamp="2026-08-13T03:54:30.273Z">2026-08-13T03:54:30.273Z</time></a></div><div class="message-content">
+<div class="thinking"><div class="thinking-label">Thinking</div></div></div></div>
+<div class="message assistant" id="msg-2026-08-13T03-54-32-546Z"><div class="message-header"><span class="role-label">Assistant</span><a href="#msg-2026-08-13T03-54-32-546Z" class="timestamp-link"><time datetime="2026-08-13T03:54:32.546Z" data-timestamp="2026-08-13T03:54:32.546Z">2026-08-13T03:54:32.546Z</time></a></div><div class="message-content">
+<div class="tool-use bash-tool" data-tool-id="toolu_01KQYsEem2BBEqVSmmkB8ojv">
+<div class="tool-header"><span class="tool-icon">$</span> Bash</div>
+<div class="tool-description">Test GET and invalid POST against deployed function</div><div class="truncatable"><div class="truncatable-content"><pre class="bash-command">cd /tmp; echo &#34;== GET&#34;; curl -s -o /dev/null -w &#34;%{http_code} %{header_json}&#34; -m 15 https://ai-couple-poc.vercel.app/api/chat 2&gt;/dev/null | head -c 300; echo; echo &#34;== POST invalid body&#34;; curl -s -i -m 15 -X POST https://ai-couple-poc.vercel.app/api/chat -H &#39;content-type: application/json&#39; -d &#39;{}&#39; | head -12</pre></div><button class="expand-btn">Show more</button></div>
+</div></div></div>
+<div class="message tool-reply" id="msg-2026-08-13T03-54-35-200Z"><div class="message-header"><span class="role-label">Tool reply</span><a href="#msg-2026-08-13T03-54-35-200Z" class="timestamp-link"><time datetime="2026-08-13T03:54:35.200Z" data-timestamp="2026-08-13T03:54:35.200Z">2026-08-13T03:54:35.200Z</time></a></div><div class="message-content"><div class="tool-result"><div class="truncatable"><div class="truncatable-content"><pre>== GET
+500 {&quot;cache-control&quot;:[&quot;public, max-age=0, must-revalidate&quot;],
+&quot;content-type&quot;:[&quot;text/plain; charset=utf-8&quot;],
+&quot;date&quot;:[&quot;Thu, 13 Aug 2026 03:54:34 GMT&quot;],
+&quot;server&quot;:[&quot;Vercel&quot;],
+&quot;strict-transport-security&quot;:[&quot;max-age=63072000; includeSubDomains; preload&quot;],
+&quot;x-vercel-cache&quot;:[&quot;MISS&quot;],
+&quot;x-vercel-error&quot;:[&quot;FUNCTI
+== POST invalid body
+HTTP/2 500 
+cache-control: public, max-age=0, must-revalidate
+content-type: text/plain; charset=utf-8
+date: Thu, 13 Aug 2026 03:54:35 GMT
+server: Vercel
+strict-transport-security: max-age=63072000; includeSubDomains; preload
+x-vercel-cache: MISS
+x-vercel-error: FUNCTION_INVOCATION_FAILED
+x-vercel-id: icn1::c2rc7-1786593274495-dde70df824ff
+content-length: 96
+
+A server error has occurred
+Shell cwd was reset to /Users/user/Desktop/ai-couple-poc</pre></div><button class="expand-btn">Show more</button></div></div></div></div>
+<div class="message assistant" id="msg-2026-08-13T03-55-28-469Z"><div class="message-header"><span class="role-label">Assistant</span><a href="#msg-2026-08-13T03-55-28-469Z" class="timestamp-link"><time datetime="2026-08-13T03:55:28.469Z" data-timestamp="2026-08-13T03:55:28.469Z">2026-08-13T03:55:28.469Z</time></a></div><div class="message-content">
+<div class="thinking"><div class="thinking-label">Thinking</div></div></div></div>
+<div class="message assistant" id="msg-2026-08-13T03-55-30-565Z"><div class="message-header"><span class="role-label">Assistant</span><a href="#msg-2026-08-13T03-55-30-565Z" class="timestamp-link"><time datetime="2026-08-13T03:55:30.565Z" data-timestamp="2026-08-13T03:55:30.565Z">2026-08-13T03:55:30.565Z</time></a></div><div class="message-content">
+<div class="assistant-text"><p>모듈 로드 시점의 크래시입니다 (GET·잘못된 body 모두 500 → 핸들러 코드에 도달조차 못 함). 로컬에서 Vercel과 같은 방식으로 컴파일해 재현해 보겠습니다.</p></div></div></div>
+<div class="message assistant" id="msg-2026-08-13T03-55-31-885Z"><div class="message-header"><span class="role-label">Assistant</span><a href="#msg-2026-08-13T03-55-31-885Z" class="timestamp-link"><time datetime="2026-08-13T03:55:31.885Z" data-timestamp="2026-08-13T03:55:31.885Z">2026-08-13T03:55:31.885Z</time></a></div><div class="message-content">
+<div class="tool-use bash-tool" data-tool-id="toolu_01DaytVqroFzM6REFo1Subxu">
+<div class="tool-header"><span class="tool-icon">$</span> Bash</div>
+<div class="tool-description">Map relative import graph reachable from api</div><div class="truncatable"><div class="truncatable-content"><pre class="bash-command">grep -rn &#34;^import\|^} from\|from &#39;\.\.&#34; api/chat.ts src/scenario/*.ts src/engine/*.ts | grep &#34;from &#39;\.\?\.\?/&#34; | sed &#39;s/:.*from/ -&gt; /&#39; </pre></div><button class="expand-btn">Show more</button></div>
+</div></div></div>
+<div class="message tool-reply" id="msg-2026-08-13T03-55-31-970Z"><div class="message-header"><span class="role-label">Tool reply</span><a href="#msg-2026-08-13T03-55-31-970Z" class="timestamp-link"><time datetime="2026-08-13T03:55:31.970Z" data-timestamp="2026-08-13T03:55:31.970Z">2026-08-13T03:55:31.970Z</time></a></div><div class="message-content"><div class="tool-result"><div class="truncatable"><div class="truncatable-content"><pre>src/scenario/endings.ts -&gt;  &#x27;../engine/types&#x27;
+src/scenario/mock.ts -&gt;  &#x27;../engine/state&#x27;
+src/scenario/mock.ts -&gt;  &#x27;../engine/types&#x27;
+api/chat.ts -&gt;  &#x27;../src/scenario/prompt&#x27;
+api/chat.ts -&gt;  &#x27;../src/scenario/mock&#x27;
+api/chat.ts -&gt;  &#x27;../src/engine/types&#x27;
+src/engine/effort.test.ts -&gt;  &#x27;./state&#x27;
+src/engine/effort.test.ts -&gt;  &#x27;./types&#x27;
+src/scenario/safety.ts -&gt;  &#x27;./character&#x27;
+src/scenario/prompt.ts -&gt;  &#x27;../engine/state&#x27;
+src/scenario/prompt.ts -&gt;  &#x27;../engine/types&#x27;
+src/scenario/prompt.ts -&gt;  &#x27;./character&#x27;
+src/scenario/prompt.ts -&gt;  &#x27;./endings&#x27;
+src/scenario/prompt.ts -&gt;  &#x27;./safety&#x27;
+src/scenario/prompt.ts -&gt;  &#x27;./scenes&#x27;
+src/scenario/scenes.ts -&gt;  &#x27;../engine/types&#x27;
+src/engine/parseTurn.ts -&gt;  &#x27;./types&#x27;
+src/engine/state.ts -&gt;  &#x27;./types&#x27;
+src/engine/parseTurn.test.ts -&gt;  &#x27;./parseTurn&#x27;
+src/engine/state.test.ts -&gt;  &#x27;./state&#x27;
+src/engine/state.test.ts -&gt;  &#x27;./types&#x27;</pre></div><button class="expand-btn">Show more</button></div></div></div></div>
+<div class="message assistant" id="msg-2026-08-13T03-55-36-927Z"><div class="message-header"><span class="role-label">Assistant</span><a href="#msg-2026-08-13T03-55-36-927Z" class="timestamp-link"><time datetime="2026-08-13T03:55:36.927Z" data-timestamp="2026-08-13T03:55:36.927Z">2026-08-13T03:55:36.927Z</time></a></div><div class="message-content">
+<div class="thinking"><div class="thinking-label">Thinking</div></div></div></div>
+<div class="message assistant" id="msg-2026-08-13T03-55-40-176Z"><div class="message-header"><span class="role-label">Assistant</span><a href="#msg-2026-08-13T03-55-40-176Z" class="timestamp-link"><time datetime="2026-08-13T03:55:40.176Z" data-timestamp="2026-08-13T03:55:40.176Z">2026-08-13T03:55:40.176Z</time></a></div><div class="message-content">
+<div class="tool-use bash-tool" data-tool-id="toolu_01LdFjvWA1H3MRmzoXWZvMiC">
+<div class="tool-header"><span class="tool-icon">$</span> Bash</div>
+<div class="tool-description">Emit api/chat.ts to JS like Vercel would</div><div class="truncatable"><div class="truncatable-content"><pre class="bash-command">OUT=/private/tmp/claude-uid/-Users-user-Desktop-ai-couple-poc/267827b4-6f7c-41ee-b273-da8bdd8d4e92/scratchpad/emit &amp;&amp; rm -rf $OUT &amp;&amp; npx tsc api/chat.ts --outDir $OUT --rootDir . --target es2023 --module esnext --moduleResolution bundler --types node --skipLibCheck --verbatimModuleSyntax --moduleDetection force 2&gt;&amp;1 | tail -5; find $OUT -name &#39;*.js&#39; | sed &#34;s|$OUT||&#34;</pre></div><button class="expand-btn">Show more</button></div>
+</div></div></div>
+<div class="message tool-reply" id="msg-2026-08-13T03-58-26-043Z"><div class="message-header"><span class="role-label">Tool reply</span><a href="#msg-2026-08-13T03-58-26-043Z" class="timestamp-link"><time datetime="2026-08-13T03:58:26.043Z" data-timestamp="2026-08-13T03:58:26.043Z">2026-08-13T03:58:26.043Z</time></a></div><div class="message-content"><div class="tool-result"><div class="truncatable"><div class="truncatable-content"><pre>error TS5112: tsconfig.json is present but will not be loaded if files are specified on commandline. Use &#x27;--ignoreConfig&#x27; to skip this error.
+bfs: error: /private/tmp/claude-uid/-Users-user-Desktop-ai-couple-poc/267827b4-6f7c-41ee-b273-da8bdd8d4e92/scratchpad/emit: No such file or directory.</pre></div><button class="expand-btn">Show more</button></div></div></div></div>
+<div class="message assistant" id="msg-2026-08-13T03-58-29-354Z"><div class="message-header"><span class="role-label">Assistant</span><a href="#msg-2026-08-13T03-58-29-354Z" class="timestamp-link"><time datetime="2026-08-13T03:58:29.354Z" data-timestamp="2026-08-13T03:58:29.354Z">2026-08-13T03:58:29.354Z</time></a></div><div class="message-content">
+<div class="tool-use bash-tool" data-tool-id="toolu_01TGefL8zvvpxFSPCCwua6dj">
+<div class="tool-header"><span class="tool-icon">$</span> Bash</div>
+<div class="tool-description">Emit api/chat.ts to JS with ignoreConfig</div><div class="truncatable"><div class="truncatable-content"><pre class="bash-command">OUT=/private/tmp/claude-uid/-Users-user-Desktop-ai-couple-poc/267827b4-6f7c-41ee-b273-da8bdd8d4e92/scratchpad/emit &amp;&amp; rm -rf $OUT &amp;&amp; npx tsc --ignoreConfig api/chat.ts --outDir $OUT --rootDir . --target es2023 --module esnext --moduleResolution bundler --types node --skipLibCheck --verbatimModuleSyntax --moduleDetection force 2&gt;&amp;1 | tail -5; find $OUT -name &#39;*.js&#39; | sed &#34;s|$OUT||&#34;</pre></div><button class="expand-btn">Show more</button></div>
+</div></div></div>
+<div class="message tool-reply" id="msg-2026-08-13T04-03-18-333Z"><div class="message-header"><span class="role-label">Tool reply</span><a href="#msg-2026-08-13T04-03-18-333Z" class="timestamp-link"><time datetime="2026-08-13T04:03:18.333Z" data-timestamp="2026-08-13T04:03:18.333Z">2026-08-13T04:03:18.333Z</time></a></div><div class="message-content"><div class="tool-result"><div class="truncatable"><div class="truncatable-content"><pre>/api/chat.js
+/src/scenario/safety.js
+/src/scenario/prompt.js
+/src/scenario/mock.js
+/src/scenario/endings.js
+/src/scenario/character.js
+/src/scenario/scenes.js
+/src/engine/types.js
+/src/engine/state.js</pre></div><button class="expand-btn">Show more</button></div></div></div></div>
+<div class="message assistant" id="msg-2026-08-13T04-03-22-122Z"><div class="message-header"><span class="role-label">Assistant</span><a href="#msg-2026-08-13T04-03-22-122Z" class="timestamp-link"><time datetime="2026-08-13T04:03:22.122Z" data-timestamp="2026-08-13T04:03:22.122Z">2026-08-13T04:03:22.122Z</time></a></div><div class="message-content">
+<div class="tool-use bash-tool" data-tool-id="toolu_01MjS8RPbusGHmjAsDbCinad">
+<div class="tool-header"><span class="tool-icon">$</span> Bash</div>
+<div class="tool-description">Try loading the emitted function as ESM</div><div class="truncatable"><div class="truncatable-content"><pre class="bash-command">OUT=/private/tmp/claude-uid/-Users-user-Desktop-ai-couple-poc/267827b4-6f7c-41ee-b273-da8bdd8d4e92/scratchpad/emit &amp;&amp; printf &#39;{&#34;type&#34;:&#34;module&#34;}&#39; &gt; $OUT/package.json &amp;&amp; ln -sfn /Users/user/Desktop/ai-couple-poc/node_modules $OUT/node_modules &amp;&amp; node -e &#34;import(&#39;$OUT/api/chat.js&#39;).then(m=&gt;console.log(&#39;LOADED&#39;, Object.keys(m), typeof m.default?.fetch)).catch(e=&gt;console.log(&#39;CRASH:&#39;, e.code, e.message.split(&#39;\n&#39;)[0]))&#34;</pre></div><button class="expand-btn">Show more</button></div>
+</div></div></div>
+<div class="message tool-reply" id="msg-2026-08-13T04-03-25-394Z"><div class="message-header"><span class="role-label">Tool reply</span><a href="#msg-2026-08-13T04-03-25-394Z" class="timestamp-link"><time datetime="2026-08-13T04:03:25.394Z" data-timestamp="2026-08-13T04:03:25.394Z">2026-08-13T04:03:25.394Z</time></a></div><div class="message-content"><div class="tool-result"><div class="truncatable"><div class="truncatable-content"><pre>CRASH: ERR_MODULE_NOT_FOUND Cannot find module &#x27;/private/tmp/claude-uid/-Users-user-Desktop-ai-couple-poc/267827b4-6f7c-41ee-b273-da8bdd8d4e92/scratchpad/emit/src/scenario/prompt&#x27; imported from /private/tmp/claude-uid/-Users-user-Desktop-ai-couple-poc/267827b4-6f7c-41ee-b273-da8bdd8d4e92/scratchpad/emit/api/chat.js</pre></div><button class="expand-btn">Show more</button></div></div></div></div>
+<div class="message assistant" id="msg-2026-08-13T04-03-48-847Z"><div class="message-header"><span class="role-label">Assistant</span><a href="#msg-2026-08-13T04-03-48-847Z" class="timestamp-link"><time datetime="2026-08-13T04:03:48.847Z" data-timestamp="2026-08-13T04:03:48.847Z">2026-08-13T04:03:48.847Z</time></a></div><div class="message-content">
+<div class="thinking"><div class="thinking-label">Thinking</div></div></div></div>
+<div class="message assistant" id="msg-2026-08-13T04-03-54-618Z"><div class="message-header"><span class="role-label">Assistant</span><a href="#msg-2026-08-13T04-03-54-618Z" class="timestamp-link"><time datetime="2026-08-13T04:03:54.618Z" data-timestamp="2026-08-13T04:03:54.618Z">2026-08-13T04:03:54.618Z</time></a></div><div class="message-content">
+<div class="assistant-text"><p>원인이 정확히 재현됐습니다. <code>ERR_MODULE_NOT_FOUND</code> — 키와 무관한 <strong>모듈 로드 실패</strong>입니다.</p>
+<p><code>package.json</code>이 <code>"type": "module"</code>이라 Vercel이 컴파일한 <code>api/chat.js</code>는 ESM으로 실행되는데, ESM Node는 상대 경로에 <strong>확장자를 요구</strong>합니다. <code>import ... from '../src/scenario/prompt'</code>가 런타임에 해석되지 않아 함수가 콜드스타트에서 죽습니다. 직전 커밋에서 루트 tsconfig를 <code>moduleResolution: bundler</code>로 바꿔 TS2835(확장자 없는 상대 경로) 에러를 없앤 것이, 사실은 컴파일러가 맞게 경고하던 런타임 문제를 가린 셈입니다.</p>
+<p>api에서 도달하는 모듈들의 상대 경로에 확장자를 붙이겠습니다.</p></div></div></div>
+<div class="message assistant" id="msg-2026-08-13T04-03-55-728Z"><div class="message-header"><span class="role-label">Assistant</span><a href="#msg-2026-08-13T04-03-55-728Z" class="timestamp-link"><time datetime="2026-08-13T04:03:55.728Z" data-timestamp="2026-08-13T04:03:55.728Z">2026-08-13T04:03:55.728Z</time></a></div><div class="message-content">
+<div class="tool-use bash-tool" data-tool-id="toolu_0135TzNaJ22QxYRUJMrY7e7a">
+<div class="tool-header"><span class="tool-icon">$</span> Bash</div>
+<div class="tool-description">Read import headers of remaining files</div><div class="truncatable"><div class="truncatable-content"><pre class="bash-command">head -8 src/scenario/endings.ts src/scenario/safety.ts src/scenario/scenes.ts src/engine/state.ts | head -40</pre></div><button class="expand-btn">Show more</button></div>
+</div></div></div>
+<div class="message tool-reply" id="msg-2026-08-13T04-03-55-781Z"><div class="message-header"><span class="role-label">Tool reply</span><a href="#msg-2026-08-13T04-03-55-781Z" class="timestamp-link"><time datetime="2026-08-13T04:03:55.781Z" data-timestamp="2026-08-13T04:03:55.781Z">2026-08-13T04:03:55.781Z</time></a></div><div class="message-content"><div class="tool-result"><div class="truncatable"><div class="truncatable-content"><pre>==&gt; src/scenario/endings.ts &lt;==
+import type { EndingKind, GameState } from &#x27;../engine/types&#x27;
+
+export type Ending = {
+  title: string
+  /** 그의 마지막 대사. 줄바꿈이 곧 침묵이다. */
+  lines: string[]
+  /** 화면에 남는 마무리 문장 */
+  closing: string
+
+==&gt; src/scenario/safety.ts &lt;==
+import { CHARACTER_NAME } from &#x27;./character&#x27;
+
+/**
+ * 위기 신호 대응. 캐릭터를 깨지 않으면서 실제 도움을 안내한다.
+ * 사전에 작성해 둔 문구를 쓴다 — 즉흥에 맡기지 않는다.
+ */
+export const CRISIS_REPLY = `...잠깐만요.
+
+
+==&gt; src/scenario/scenes.ts &lt;==
+import type { SceneNo } from &#x27;../engine/types&#x27;
+
+export type Scene = {
+  title: string
+  /** UI에 노출되는 한 줄 */
+  headline: string
+  /** 화가 시작될 때 그가 먼저 던지는 고정 대사 */
+  opening: string
+
+==&gt; src/engine/state.ts &lt;==
+import type { EndingKind, GameState, SceneNo, TurnResponse } from &#x27;./types&#x27;
+
+export const AFFECTION_START = 30
+export const AFFECTION_MIN = 0
+export const AFFECTION_MAX = 100
+
+/**
+ * 보상 우위 — 얻기가 잃기보다 크다. 체류와 상승 체감을 위한 의도된 선택이다.</pre></div><button class="expand-btn">Show more</button></div></div></div></div>
+<div class="message assistant" id="msg-2026-08-13T04-04-02-773Z"><div class="message-header"><span class="role-label">Assistant</span><a href="#msg-2026-08-13T04-04-02-773Z" class="timestamp-link"><time datetime="2026-08-13T04:04:02.773Z" data-timestamp="2026-08-13T04:04:02.773Z">2026-08-13T04:04:02.773Z</time></a></div><div class="message-content">
+<div class="thinking"><div class="thinking-label">Thinking</div></div></div></div>
+<div class="message assistant" id="msg-2026-08-13T04-04-04-568Z"><div class="message-header"><span class="role-label">Assistant</span><a href="#msg-2026-08-13T04-04-04-568Z" class="timestamp-link"><time datetime="2026-08-13T04:04:04.568Z" data-timestamp="2026-08-13T04:04:04.568Z">2026-08-13T04:04:04.568Z</time></a></div><div class="message-content">
+<div class="tool-use bash-tool" data-tool-id="toolu_01NAYkhC917ittCdYyJbcwdh">
+<div class="tool-header"><span class="tool-icon">$</span> Bash</div>
+<div class="tool-description">Add .js extensions to relative imports in the api graph</div><div class="truncatable"><div class="truncatable-content"><pre class="bash-command">perl -pi -e &#34;s{from &#39;(\.\.?/[^&#39;]+?)&#39;}{from &#39;\$1.js&#39;}g unless m{\.js&#39;}&#34; api/chat.ts src/scenario/prompt.ts src/scenario/mock.ts src/scenario/endings.ts src/scenario/safety.ts src/scenario/scenes.ts src/engine/state.ts &amp;&amp; grep -rn &#34;from &#39;\.\.\?/&#34; api/chat.ts src/scenario/*.ts src/engine/state.ts</pre></div><button class="expand-btn">Show more</button></div>
+</div></div></div>
+<div class="message tool-reply" id="msg-2026-08-13T04-04-15-110Z"><div class="message-header"><span class="role-label">Tool reply</span><a href="#msg-2026-08-13T04-04-15-110Z" class="timestamp-link"><time datetime="2026-08-13T04:04:15.110Z" data-timestamp="2026-08-13T04:04:15.110Z">2026-08-13T04:04:15.110Z</time></a></div><div class="message-content"><div class="tool-result"><div class="truncatable"><div class="truncatable-content"><pre>api/chat.ts:2:import { buildSystemPrompt, TURN_SCHEMA } from &#x27;../src/scenario/prompt.js&#x27;
+api/chat.ts:3:import { mockTurn } from &#x27;../src/scenario/mock.js&#x27;
+api/chat.ts:4:import type { GameState } from &#x27;../src/engine/types.js&#x27;
+src/scenario/endings.ts:1:import type { EndingKind, GameState } from &#x27;../engine/types.js&#x27;
+src/scenario/safety.ts:1:import { CHARACTER_NAME } from &#x27;./character.js&#x27;
+src/scenario/mock.ts:1:import { awkwardness, effortCeiling, SCENE_MIN_TURNS } from &#x27;../engine/state.js&#x27;
+src/scenario/mock.ts:2:import type { GameState, TurnResponse } from &#x27;../engine/types.js&#x27;
+src/scenario/scenes.ts:1:import type { SceneNo } from &#x27;../engine/types.js&#x27;
+src/scenario/prompt.ts:1:import { awkwardness, DELTA_MAX, DELTA_MIN, SCENE_MAX_TURNS, SCENE_MIN_TURNS } from &#x27;../engine/state.js&#x27;
+src/scenario/prompt.ts:2:import type { GameState } from &#x27;../engine/types.js&#x27;
+src/scenario/prompt.ts:3:import { CHARACTER_CARD } from &#x27;./character.js&#x27;
+src/scenario/prompt.ts:4:import { awakeningCue, awakeningFor } from &#x27;./endings.js&#x27;
+src/scenario/prompt.ts:5:import { SAFETY_RULES } from &#x27;./safety.js&#x27;
+src/scenario/prompt.ts:6:import { SCENES } from &#x27;./scenes.js&#x27;
+src/engine/state.ts:1:import type { EndingKind, GameState, SceneNo, TurnResponse } from &#x27;./types.js&#x27;</pre></div><button class="expand-btn">Show more</button></div></div></div></div>
+<div class="message assistant" id="msg-2026-08-13T04-04-18-279Z"><div class="message-header"><span class="role-label">Assistant</span><a href="#msg-2026-08-13T04-04-18-279Z" class="timestamp-link"><time datetime="2026-08-13T04:04:18.279Z" data-timestamp="2026-08-13T04:04:18.279Z">2026-08-13T04:04:18.279Z</time></a></div><div class="message-content">
+<div class="thinking"><div class="thinking-label">Thinking</div></div></div></div>
+<div class="message assistant" id="msg-2026-08-13T04-04-23-955Z"><div class="message-header"><span class="role-label">Assistant</span><a href="#msg-2026-08-13T04-04-23-955Z" class="timestamp-link"><time datetime="2026-08-13T04:04:23.955Z" data-timestamp="2026-08-13T04:04:23.955Z">2026-08-13T04:04:23.955Z</time></a></div><div class="message-content"><div class="file-tool edit-tool" data-tool-id="toolu_01CVNPipCohdbw1zDcPAwkvs">
+<div class="file-tool-header edit-header"><span class="file-tool-icon">✏️</span> Edit <span class="file-tool-path">chat.ts</span></div>
+<div class="file-tool-fullpath">/Users/user/Desktop/ai-couple-poc/api/chat.ts</div>
+<div class="truncatable"><div class="truncatable-content">
+<div class="edit-section edit-old"><div class="edit-label">−</div><pre class="edit-content"> * 이 제품에서 지연을 지배하는 건 LLM 호출(초 단위)이라 edge의 콜드스타트 이점은 무의미하다.
+ */</pre></div>
+<div class="edit-section edit-new"><div class="edit-label">+</div><pre class="edit-content"> * 이 제품에서 지연을 지배하는 건 LLM 호출(초 단위)이라 edge의 콜드스타트 이점은 무의미하다.
+ *
+ * **상대 경로 import에는 `.js` 확장자를 붙인다.** package.json이 `&#34;type&#34;: &#34;module&#34;`이라
+ * Vercel이 컴파일한 함수는 ESM으로 실행되고, ESM Node는 확장자를 생략한 상대 경로를 해석하지 못한다.
+ * 빌드는 통과하고 콜드스타트에서만 죽는다 — `ERR_MODULE_NOT_FOUND` → FUNCTION_INVOCATION_FAILED,
+ * 클라이언트에는 그냥 500으로 보인다. (2026-08-13 실측)
+ * 여기서 타고 들어가는 `src/scenario/*`·`src/engine/*`도 같은 규칙을 지켜야 한다.
+ */</pre></div>
+</div><button class="expand-btn">Show more</button></div>
+</div></div></div>
+<div class="message tool-reply" id="msg-2026-08-13T04-04-25-014Z"><div class="message-header"><span class="role-label">Tool reply</span><a href="#msg-2026-08-13T04-04-25-014Z" class="timestamp-link"><time datetime="2026-08-13T04:04:25.014Z" data-timestamp="2026-08-13T04:04:25.014Z">2026-08-13T04:04:25.014Z</time></a></div><div class="message-content"><div class="tool-result"><div class="truncatable"><div class="truncatable-content"><pre>The file /Users/user/Desktop/ai-couple-poc/api/chat.ts has been updated successfully. (file state is current in your context — no need to Read it back)</pre></div><button class="expand-btn">Show more</button></div></div></div></div>
+<div class="message assistant" id="msg-2026-08-13T04-04-31-728Z"><div class="message-header"><span class="role-label">Assistant</span><a href="#msg-2026-08-13T04-04-31-728Z" class="timestamp-link"><time datetime="2026-08-13T04:04:31.728Z" data-timestamp="2026-08-13T04:04:31.728Z">2026-08-13T04:04:31.728Z</time></a></div><div class="message-content"><div class="file-tool edit-tool" data-tool-id="toolu_01KFSHHU8jdujZFsFRnUS6pw">
+<div class="file-tool-header edit-header"><span class="file-tool-icon">✏️</span> Edit <span class="file-tool-path">tsconfig.json</span></div>
+<div class="file-tool-fullpath">/Users/user/Desktop/ai-couple-poc/tsconfig.json</div>
+<div class="truncatable"><div class="truncatable-content">
+<div class="edit-section edit-old"><div class="edit-label">−</div><pre class="edit-content">   * 그래서 여기 값은 `tsconfig.api.json`과 **일치시켜 둔다.** 한쪽만 고치면 로컬은 통과하고
+   * 배포만 깨지는데, 그건 푸시하기 전까지 안 보인다.
+   */</pre></div>
+<div class="edit-section edit-new"><div class="edit-label">+</div><pre class="edit-content">   * 그래서 여기 값은 `tsconfig.api.json`과 **일치시켜 둔다.** 한쪽만 고치면 로컬은 통과하고
+   * 배포만 깨지는데, 그건 푸시하기 전까지 안 보인다.
+   *
+   * `moduleResolution: bundler`는 TS2835를 **없애는 게 아니라 침묵시킨다.** 실행 시점의 ESM Node는
+   * 여전히 확장자를 요구하므로, api/에서 도달하는 파일의 상대 경로에는 `.js`를 붙인다 (`api/chat.ts` 주석).
+   */</pre></div>
+</div><button class="expand-btn">Show more</button></div>
+</div></div></div>
+<div class="message tool-reply" id="msg-2026-08-13T04-04-32-760Z"><div class="message-header"><span class="role-label">Tool reply</span><a href="#msg-2026-08-13T04-04-32-760Z" class="timestamp-link"><time datetime="2026-08-13T04:04:32.760Z" data-timestamp="2026-08-13T04:04:32.760Z">2026-08-13T04:04:32.760Z</time></a></div><div class="message-content"><div class="tool-result"><div class="truncatable"><div class="truncatable-content"><pre>The file /Users/user/Desktop/ai-couple-poc/tsconfig.json has been updated successfully. (file state is current in your context — no need to Read it back)</pre></div><button class="expand-btn">Show more</button></div></div></div></div>
+<div class="message assistant" id="msg-2026-08-13T04-04-38-707Z"><div class="message-header"><span class="role-label">Assistant</span><a href="#msg-2026-08-13T04-04-38-707Z" class="timestamp-link"><time datetime="2026-08-13T04:04:38.707Z" data-timestamp="2026-08-13T04:04:38.707Z">2026-08-13T04:04:38.707Z</time></a></div><div class="message-content"><div class="file-tool edit-tool" data-tool-id="toolu_019EnMQ1xkaVMegnLDEE5Yge">
+<div class="file-tool-header edit-header"><span class="file-tool-icon">✏️</span> Edit <span class="file-tool-path">api.ts</span></div>
+<div class="file-tool-fullpath">/Users/user/Desktop/ai-couple-poc/src/api.ts</div>
+<div class="truncatable"><div class="truncatable-content">
+<div class="edit-section edit-old"><div class="edit-label">−</div><pre class="edit-content">  if (!res.ok) {
+    throw new ChatError(
+      res.status === 500
+        ? &#39;서버 설정이 아직이에요. (ANTHROPIC_API_KEY)&#39;
+        : &#39;답장이 오다가 멈췄어요. 다시 보내주세요.&#39;,
+    )
+  }</pre></div>
+<div class="edit-section edit-new"><div class="edit-label">+</div><pre class="edit-content">  // 상태 코드로 원인을 단정하지 않는다. 키가 없으면 서버가 목업으로 200을 주므로
+  // 500은 함수 자체가 죽었다는 뜻이고, 그 이유는 배포 로그에만 있다.
+  if (!res.ok) {
+    throw new ChatError(`답장이 오다가 멈췄어요. 다시 보내주세요. (${res.status})`)
+  }</pre></div>
+</div><button class="expand-btn">Show more</button></div>
+</div></div></div>
+<div class="message tool-reply" id="msg-2026-08-13T04-04-39-740Z"><div class="message-header"><span class="role-label">Tool reply</span><a href="#msg-2026-08-13T04-04-39-740Z" class="timestamp-link"><time datetime="2026-08-13T04:04:39.740Z" data-timestamp="2026-08-13T04:04:39.740Z">2026-08-13T04:04:39.740Z</time></a></div><div class="message-content"><div class="tool-result"><div class="truncatable"><div class="truncatable-content"><pre>The file /Users/user/Desktop/ai-couple-poc/src/api.ts has been updated successfully. (file state is current in your context — no need to Read it back)</pre></div><button class="expand-btn">Show more</button></div></div></div></div>
+<div class="message assistant" id="msg-2026-08-13T04-04-42-596Z"><div class="message-header"><span class="role-label">Assistant</span><a href="#msg-2026-08-13T04-04-42-596Z" class="timestamp-link"><time datetime="2026-08-13T04:04:42.596Z" data-timestamp="2026-08-13T04:04:42.596Z">2026-08-13T04:04:42.596Z</time></a></div><div class="message-content">
+<div class="assistant-text"><p>Vercel과 같은 방식으로 다시 컴파일해 로드되는지 확인합니다.</p></div></div></div>
+<div class="message assistant" id="msg-2026-08-13T04-04-47-277Z"><div class="message-header"><span class="role-label">Assistant</span><a href="#msg-2026-08-13T04-04-47-277Z" class="timestamp-link"><time datetime="2026-08-13T04:04:47.277Z" data-timestamp="2026-08-13T04:04:47.277Z">2026-08-13T04:04:47.277Z</time></a></div><div class="message-content">
+<div class="tool-use bash-tool" data-tool-id="toolu_01Mc5CcuSWxqr9r5sPzfMPvA">
+<div class="tool-header"><span class="tool-icon">$</span> Bash</div>
+<div class="tool-description">Re-emit and load the function as ESM</div><div class="truncatable"><div class="truncatable-content"><pre class="bash-command">OUT=/private/tmp/claude-uid/-Users-user-Desktop-ai-couple-poc/267827b4-6f7c-41ee-b273-da8bdd8d4e92/scratchpad/emit &amp;&amp; rm -rf $OUT &amp;&amp; npx tsc --ignoreConfig api/chat.ts --outDir $OUT --rootDir . --target es2023 --module esnext --moduleResolution bundler --types node --skipLibCheck --verbatimModuleSyntax --moduleDetection force 2&gt;&amp;1 | tail -3; printf &#39;{&#34;type&#34;:&#34;module&#34;}&#39; &gt; $OUT/package.json &amp;&amp; ln -sfn /Users/user/Desktop/ai-couple-poc/node_modules $OUT/node_modules &amp;&amp; node -e &#34;import(&#39;$OUT/api/chat.js&#39;).then(async m=&gt;{console.log(&#39;LOADED&#39;, typeof m.default.fetch);const r=await m.default.fetch(new Request(&#39;http://x/api/chat&#39;,{method:&#39;GET&#39;}));console.log(&#39;GET -&gt;&#39;,r.status,await r.text())}).catch(e=&gt;console.log(&#39;CRASH:&#39;,e.code,e.message.split(&#39;\n&#39;)[0]))&#34;</pre></div><button class="expand-btn">Show more</button></div>
+</div></div></div>
+<div class="message tool-reply" id="msg-2026-08-13T04-13-23-323Z"><div class="message-header"><span class="role-label">Tool reply</span><a href="#msg-2026-08-13T04-13-23-323Z" class="timestamp-link"><time datetime="2026-08-13T04:13:23.323Z" data-timestamp="2026-08-13T04:13:23.323Z">2026-08-13T04:13:23.323Z</time></a></div><div class="message-content"><div class="tool-result"><div class="truncatable"><div class="truncatable-content"><pre>LOADED function
+GET -&gt; 405 {&quot;error&quot;:&quot;method_not_allowed&quot;}</pre></div><button class="expand-btn">Show more</button></div></div></div></div>
+<div class="message assistant" id="msg-2026-08-13T04-13-26-173Z"><div class="message-header"><span class="role-label">Assistant</span><a href="#msg-2026-08-13T04-13-26-173Z" class="timestamp-link"><time datetime="2026-08-13T04:13:26.173Z" data-timestamp="2026-08-13T04:13:26.173Z">2026-08-13T04:13:26.173Z</time></a></div><div class="message-content">
+<div class="thinking"><div class="thinking-label">Thinking</div></div></div></div>
+<div class="message assistant" id="msg-2026-08-13T04-13-26-719Z"><div class="message-header"><span class="role-label">Assistant</span><a href="#msg-2026-08-13T04-13-26-719Z" class="timestamp-link"><time datetime="2026-08-13T04:13:26.719Z" data-timestamp="2026-08-13T04:13:26.719Z">2026-08-13T04:13:26.719Z</time></a></div><div class="message-content">
+<div class="assistant-text"><p>모듈이 로드되고 핸들러가 응답합니다. 빌드·테스트·린트를 돌립니다.</p></div></div></div>
+<div class="message assistant" id="msg-2026-08-13T04-13-27-236Z"><div class="message-header"><span class="role-label">Assistant</span><a href="#msg-2026-08-13T04-13-27-236Z" class="timestamp-link"><time datetime="2026-08-13T04:13:27.236Z" data-timestamp="2026-08-13T04:13:27.236Z">2026-08-13T04:13:27.236Z</time></a></div><div class="message-content">
+<div class="tool-use bash-tool" data-tool-id="toolu_01WN9oznrQCXbxFiiRkC2MqE">
+<div class="tool-header"><span class="tool-icon">$</span> Bash</div>
+<div class="tool-description">Run build, tests, and lint</div><div class="truncatable"><div class="truncatable-content"><pre class="bash-command">pnpm build 2&gt;&amp;1 | tail -8 &amp;&amp; pnpm test 2&gt;&amp;1 | tail -8 &amp;&amp; pnpm lint 2&gt;&amp;1 | tail -5</pre></div><button class="expand-btn">Show more</button></div>
+</div></div></div>
+<div class="message tool-reply" id="msg-2026-08-13T04-13-31-545Z"><div class="message-header"><span class="role-label">Tool reply</span><a href="#msg-2026-08-13T04-13-31-545Z" class="timestamp-link"><time datetime="2026-08-13T04:13:31.545Z" data-timestamp="2026-08-13T04:13:31.545Z">2026-08-13T04:13:31.545Z</time></a></div><div class="message-content"><div class="tool-result"><div class="truncatable"><div class="truncatable-content"><pre>[2K
+transforming...✓ 29 modules transformed.
+rendering chunks...
+computing gzip size...
+dist/index.html                   0.70 kB │ gzip:  0.47 kB
+dist/assets/index-qRB2lqi6.css    5.34 kB │ gzip:  1.76 kB
+dist/assets/index-BaBfcOTk.js   210.93 kB │ gzip: 69.14 kB
+
+✓ built in 331ms
+ RUN  v4.1.10 /Users/user/Desktop/ai-couple-poc
+
+
+ Test Files  3 passed (3)
+      Tests  84 passed (84)
+   Start at  13:13:29
+   Duration  169ms (transform 91ms, setup 0ms, import 122ms, tests 17ms, environment 0ms)
+
+
+&gt; ai-couple-poc@0.0.0 lint /Users/user/Desktop/ai-couple-poc
+&gt; eslint .</pre></div><button class="expand-btn">Show more</button></div></div></div></div>
+<div class="message assistant" id="msg-2026-08-13T04-13-36-278Z"><div class="message-header"><span class="role-label">Assistant</span><a href="#msg-2026-08-13T04-13-36-278Z" class="timestamp-link"><time datetime="2026-08-13T04:13:36.278Z" data-timestamp="2026-08-13T04:13:36.278Z">2026-08-13T04:13:36.278Z</time></a></div><div class="message-content">
+<div class="thinking"><div class="thinking-label">Thinking</div></div></div></div>
+<div class="message assistant" id="msg-2026-08-13T04-13-43-100Z"><div class="message-header"><span class="role-label">Assistant</span><a href="#msg-2026-08-13T04-13-43-100Z" class="timestamp-link"><time datetime="2026-08-13T04:13:43.100Z" data-timestamp="2026-08-13T04:13:43.100Z">2026-08-13T04:13:43.100Z</time></a></div><div class="message-content">
+<div class="tool-use bash-tool" data-tool-id="toolu_013hzhk72AH9rceUHdyMfdWR">
+<div class="tool-header"><span class="tool-icon">$</span> Bash</div>
+<div class="tool-description">Commit and push the fix to main</div><div class="truncatable"><div class="truncatable-content"><pre class="bash-command">git add -A &amp;&amp; git commit -q -F - &lt;&lt;&#39;EOF&#39; &amp;&amp; git push -q origin main &amp;&amp; git log --oneline -1
+fix(api): 상대 경로 import에 .js — ESM 런타임 콜드스타트 크래시
+
+package.json이 type: module이라 Vercel이 컴파일한 api/chat.js는 ESM으로 실행되는데,
+확장자 없는 상대 경로를 ESM Node가 해석하지 못해 모듈 로드 단계에서 죽었다
+(ERR_MODULE_NOT_FOUND → FUNCTION_INVOCATION_FAILED). 빌드는 통과하고 배포 후에만
+드러난다. 직전 커밋의 moduleResolution: bundler는 TS2835를 없앤 게 아니라 침묵시킨 것이었다.
+
+api/에서 도달하는 src/scenario/*, src/engine/state.ts까지 같은 규칙을 적용했다.
+함께: 클라이언트가 500을 ANTHROPIC_API_KEY 미설정으로 단정하던 메시지를 걷어냈다 —
+키가 없으면 서버는 목업으로 200을 주므로 그 추정은 항상 틀렸다.
+
+Co-Authored-By: Claude Opus 5 &lt;noreply@anthropic.com&gt;
+EOF</pre></div><button class="expand-btn">Show more</button></div>
+</div></div></div>
+<div class="message tool-reply" id="msg-2026-08-13T04-15-34-431Z"><div class="message-header"><span class="role-label">Tool reply</span><a href="#msg-2026-08-13T04-15-34-431Z" class="timestamp-link"><time datetime="2026-08-13T04:15:34.431Z" data-timestamp="2026-08-13T04:15:34.431Z">2026-08-13T04:15:34.431Z</time></a></div><div class="message-content"><div class="tool-result"><div class="truncatable"><div class="truncatable-content"><pre>a69df42 fix(api): 상대 경로 import에 .js — ESM 런타임 콜드스타트 크래시</pre></div><button class="expand-btn">Show more</button></div></div></div></div>
+<div class="message assistant" id="msg-2026-08-13T04-15-39-517Z"><div class="message-header"><span class="role-label">Assistant</span><a href="#msg-2026-08-13T04-15-39-517Z" class="timestamp-link"><time datetime="2026-08-13T04:15:39.517Z" data-timestamp="2026-08-13T04:15:39.517Z">2026-08-13T04:15:39.517Z</time></a></div><div class="message-content">
+<div class="tool-use bash-tool" data-tool-id="toolu_015NuCm7GtdqAbyBCYxNqwtW">
+<div class="tool-header"><span class="tool-icon">$</span> Bash</div>
+<div class="tool-description">Poll deployed endpoint until the new deploy is live</div><div class="truncatable"><div class="truncatable-content"><pre class="bash-command">for i in 1 2 3 4 5 6 7 8; do sleep 20; code=$(curl -s -o /tmp/r.json -w &#34;%{http_code}&#34; -m 30 -X POST https://ai-couple-poc.vercel.app/api/chat -H &#39;content-type: application/json&#39; -d &#39;{&#34;state&#34;:{&#34;run&#34;:1,&#34;scene&#34;:1,&#34;turnInScene&#34;:0,&#34;affection&#34;:30,&#34;ending&#34;:null,&#34;fallbackCount&#34;:0},&#34;history&#34;:[],&#34;message&#34;:&#34;안녕하세요. 여기 자주 오세요?&#34;}&#39;); echo &#34;try $i -&gt; $code&#34;; if [ &#34;$code&#34; = &#34;200&#34; ]; then head -c 500 /tmp/r.json; break; fi; done</pre></div><button class="expand-btn">Show more</button></div>
+</div></div></div>
+<div class="message tool-reply" id="msg-2026-08-13T04-16-05-269Z"><div class="message-header"><span class="role-label">Tool reply</span><a href="#msg-2026-08-13T04-16-05-269Z" class="timestamp-link"><time datetime="2026-08-13T04:16:05.269Z" data-timestamp="2026-08-13T04:16:05.269Z">2026-08-13T04:16:05.269Z</time></a></div><div class="message-content"><div class="tool-result"><div class="truncatable"><div class="truncatable-content"><pre>try 1 -&gt; 200
+{&quot;raw&quot;:&quot;{\&quot;dialogue\&quot;: \&quot;...네, 책모임이 있을 때마다요.\\n\\n아, 당신도 자주 오세요?\&quot;, \&quot;affection_delta\&quot;: 2, \&quot;emotion\&quot;: \&quot;조심스러움\&quot;, \&quot;scene_advance\&quot;: false}&quot;}</pre></div><button class="expand-btn">Show more</button></div></div></div></div>
+<div class="message assistant" id="msg-2026-08-13T04-16-08-385Z"><div class="message-header"><span class="role-label">Assistant</span><a href="#msg-2026-08-13T04-16-08-385Z" class="timestamp-link"><time datetime="2026-08-13T04:16:08.385Z" data-timestamp="2026-08-13T04:16:08.385Z">2026-08-13T04:16:08.385Z</time></a></div><div class="message-content">
+<div class="thinking"><div class="thinking-label">Thinking</div></div></div></div>
+<div class="message assistant" id="msg-2026-08-13T04-16-23-913Z"><div class="message-header"><span class="role-label">Assistant</span><a href="#msg-2026-08-13T04-16-23-913Z" class="timestamp-link"><time datetime="2026-08-13T04:16:23.913Z" data-timestamp="2026-08-13T04:16:23.913Z">2026-08-13T04:16:23.913Z</time></a></div><div class="message-content">
+<div class="assistant-text"><p>배포 반영됐고 정상 동작합니다. 응답에 <code>mock</code> 필드가 없으니 실제 Anthropic 호출이 성공한 것 — 등록해 두신 <code>ANTHROPIC_API_KEY</code>는 처음부터 잘 읽히고 있었습니다.</p>
+<h2>원인</h2>
+<p>키 문제가 아니라 <strong>함수가 콜드스타트에서 죽고 있었습니다.</strong></p>
+<ul>
+<li>배포된 함수에 직접 요청해 보니 <code>x-vercel-error: FUNCTION_INVOCATION_FAILED</code>. GET·빈 body 요청도 똑같이 500 → 핸들러 코드에 도달조차 못 하는, 모듈 로드 단계의 크래시였습니다.</li>
+<li><code>package.json</code>이 <code>"type": "module"</code>이라 Vercel이 컴파일한 <code>api/chat.js</code>는 ESM으로 실행되는데, ESM Node는 상대 경로에 확장자를 요구합니다. <code>import ... from '../src/scenario/prompt'</code>가 해석되지 않아 <code>ERR_MODULE_NOT_FOUND</code>.</li>
+<li>로컬에서 같은 방식으로 컴파일해 재현했고, 확장자를 붙인 뒤 같은 절차로 로드·응답까지 확인한 다음 푸시했습니다.</li>
+</ul>
+<p>직전 커밋에서 루트 tsconfig를 <code>moduleResolution: bundler</code>로 바꿔 TS2835(확장자 없는 상대 경로)를 없앤 것이, 실은 컴파일러가 맞게 지적하던 런타임 문제를 침묵시킨 것이었습니다. 빌드는 통과하고 배포 후에만 드러나는 종류라, <a href="tsconfig.json">tsconfig.json</a>과 <a href="api/chat.ts#L19-L24">api/chat.ts:19-24</a>에 이유를 적어 뒀습니다.</p>
+<h2>바꾼 것</h2>
+<ul>
+<li><a href="api/chat.ts">api/chat.ts</a>와 거기서 도달하는 <a href="src/scenario/">src/scenario/</a>·<a href="src/engine/state.ts">src/engine/state.ts</a>의 상대 경로 import에 <code>.js</code> 확장자 추가</li>
+<li><a href="src/api.ts#L26-L30">src/api.ts:26-30</a> — 500을 <code>ANTHROPIC_API_KEY</code> 미설정으로 단정하던 메시지 제거. 키가 없으면 서버가 목업으로 200을 주므로 그 추정은 항상 틀렸고, 이번에 진단을 엉뚱한 곳으로 보냈습니다. 지금은 상태 코드만 그대로 보여줍니다.</li>
+</ul>
+<p><code>pnpm build</code> · <code>test</code>(84개) · <code>lint</code> 모두 통과했고, main에 커밋·푸시했습니다 (<code>a69df42</code>).</p>
+<p>한 가지 남는 것: 이 클래스의 버그는 로컬 dev 서버가 Vite로 모듈을 해석해서 절대 안 잡힙니다. 앞으로 <code>api/</code> 쪽을 건드리면 배포 후 <code>/api/chat</code>에 curl 한 번 쳐보는 게 가장 싼 확인입니다.</p></div></div></div>
+        
+
+<div class="pagination"><a href="index.html" class="index-link">Index</a></div>
+
+    </div>
+    <script>
+document.querySelectorAll('time[data-timestamp]').forEach(function(el) {
+    const timestamp = el.getAttribute('data-timestamp');
+    const date = new Date(timestamp);
+    const now = new Date();
+    const isToday = date.toDateString() === now.toDateString();
+    const timeStr = date.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
+    if (isToday) { el.textContent = timeStr; }
+    else { el.textContent = date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) + ' ' + timeStr; }
+});
+document.querySelectorAll('pre.json').forEach(function(el) {
+    let text = el.textContent;
+    text = text.replace(/"([^"]+)":/g, '<span style="color: #ce93d8">"$1"</span>:');
+    text = text.replace(/: "([^"]*)"/g, ': <span style="color: #81d4fa">"$1"</span>');
+    text = text.replace(/: (\d+)/g, ': <span style="color: #ffcc80">$1</span>');
+    text = text.replace(/: (true|false|null)/g, ': <span style="color: #f48fb1">$1</span>');
+    el.innerHTML = text;
+});
+document.querySelectorAll('.truncatable').forEach(function(wrapper) {
+    const content = wrapper.querySelector('.truncatable-content');
+    const btn = wrapper.querySelector('.expand-btn');
+    if (content.scrollHeight > 250) {
+        wrapper.classList.add('truncated');
+        btn.addEventListener('click', function() {
+            if (wrapper.classList.contains('truncated')) { wrapper.classList.remove('truncated'); wrapper.classList.add('expanded'); btn.textContent = 'Show less'; }
+            else { wrapper.classList.remove('expanded'); wrapper.classList.add('truncated'); btn.textContent = 'Show more'; }
+        });
+    }
+});
+</script>
+</body>
+</html>

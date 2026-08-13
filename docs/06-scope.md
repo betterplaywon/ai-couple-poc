@@ -35,7 +35,7 @@ M1~M7·M9·M11은 완료. 대사 톤 감수와 [#29](03-tradeoffs.md)(성의 하
 | M7 | AI 고지 상시 노출 | 화면 하단 고정 | ✅ 완료 (엔딩 화면 포함) |
 | M11 | **런타임 LLM을 Claude로 복귀** | `ANTHROPIC_API_KEY`로 완주 1회 + 델타 분포가 Gemini와 유사 | ✅ 코드 완료 · 실호출 확인 |
 | M8 | Vercel 배포 | 접속 링크 확보 (인프라 작업은 하지 않음) | ⏳ GitHub 푸시 완료 · **대시보드 import 대기** |
-| M9 | `transcripts/` 커밋 | 세션 6개 HTML 변환, gitignore에 안 걸림 | ✅ 완료 (공개 전 정리 포함) |
+| M9 | `transcripts/` 커밋 | 세션 9개 HTML 변환, gitignore에 안 걸림 | ✅ 완료 (공개 전 정리 포함) |
 | M10 | README 500자 소개 | 링크 포함 | ⏳ 소개 완료 · **링크 미삽입 (M8 대기)** |
 
 ### M8 — 배포 절차 (남은 것)

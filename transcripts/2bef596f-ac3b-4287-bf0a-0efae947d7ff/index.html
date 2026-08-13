@@ -160,10 +160,11 @@ details.continuation[open] summary { border-radius: 12px 12px 0 0; margin-bottom
 <span class="current">Index</span>
 <span class="disabled">&larr; Prev</span>
 <a href="page-001.html">1</a>
+<a href="page-002.html">2</a>
 <a href="page-001.html">Next &rarr;</a>
 </div>
 
-        <p style="color: var(--text-muted); margin-bottom: 24px;">4 prompts · 286 messages · 105 tool calls · 0 commits · 1 pages</p>
+        <p style="color: var(--text-muted); margin-bottom: 24px;">6 prompts · 422 messages · 148 tool calls · 0 commits · 2 pages</p>
         
 <div class="index-item"><a href="page-001.html#msg-2026-08-13T01-42-03-536Z"><div class="index-item-header"><span class="index-item-number">#1</span><time datetime="2026-08-13T01:42:03.536Z" data-timestamp="2026-08-13T01:42:03.536Z">2026-08-13T01:42:03.536Z</time></div><div class="index-item-content"><p>다음 작업들을 진행할게.</p>
 <p>M6 익숙함 누적 체감 — 배드 → 2번째 → 3번째 시도 연속 완주. 재도전을 간판에서 내린 만큼, 대사에서 보이는지가 이제 이 기능의 존재 이유입니다
@@ -24695,7 +24696,7 @@ grep -rn &quot;ANTHROPIC&quot; dist/ 2&gt;/dev/null
 - AI 고지 상시 노출 (엔딩 화면 포함)
 - transcripts 커밋 여부 (아직 미착수 상태다)
 - <code>pnpm build</code> / <code>pnpm test</code> / <code>pnpm lint</code></p>
-<p>배포 자체는 아직 하지 마라. 점검 결과만 보고할 것 — 특히 <strong>지금 배포하면 안 되는 이유가 있는지</strong>를 명확히.</p></div></a><div class="index-item-stats"><span>16 bash</span>
+<p>배포 자체는 아직 하지 마라. 점검 결과만 보고할 것 — 특히 <strong>지금 배포하면 안 되는 이유가 있는지</strong>를 명확히.</p></div></a><div class="index-item-stats"><span>35 bash · 2 askuserquestion · 2 edit · 1 todo</span>
 <div class="index-item-long-text"><div class="truncatable"><div class="truncatable-content"><div class="index-item-long-text-content"><p>Base directory for this skill: /Users/user/Desktop/ai-couple-poc/.claude/skills/ship-check</p>
 <h1>출시 점검</h1>
 <p>위에서부터 순서대로 확인한다. <strong>실패하면 거기서 멈추고 고친 뒤 다시 시작한다.</strong>
@@ -24764,6 +24765,137 @@ grep -rn &quot;ANTHROPIC&quot; dist/ 2&gt;/dev/null
 - transcripts 커밋 여부 (아직 미착수 상태다)
 - <code>pnpm build</code> / <code>pnpm test</code> / <code>pnpm lint</code></p>
 <p>배포 자체는 아직 하지 마라. 점검 결과만 보고할 것 — 특히 <strong>지금 배포하면 안 되는 이유가 있는지</strong>를 명확히.</p></div></div><button class="expand-btn">Show more</button></div></div>
+<div class="index-item-long-text"><div class="truncatable"><div class="truncatable-content"><div class="index-item-long-text-content"><p>다섯 작업 중 넷을 닫았고, 배포만 남았습니다.</p>
+<h2>M11 — Claude 복귀 ✅</h2>
+<p><code>@anthropic-ai/sdk</code> 설치가 선행돼야 한다는 지적이 맞았습니다. <strong><code>docs/06-scope.md</code>의 "이미 의존성에 있음"은 사실과 달랐고</strong>, Gemini로 갈 때 함께 제거된 걸 낡은 기록이 반영 못 한 것이었습니다. 문서에 경위를 남겼습니다.</p>
+<p>교체 중 두 가지가 계획 밖이었습니다:
+- <strong>크레딧이 소진돼 있었습니다.</strong> 코드는 빌드·요청 모두 정상인데 400으로 막혀 전부 목업으로 돌았습니다. 충전 후 실호출 확인했습니다.
+- Anthropic은 첫 메시지가 <code>user</code>여야 하는데 화의 고정 오프닝 때문에 이력이 assistant로 시작합니다. 앞쪽 assistant 턴을 버리는 한 줄을 추가했습니다.</p>
+<p><code>@google/genai</code>는 제거했습니다 — 제공자 스위치로 둘 다 살리는 안은 거절했습니다. 데모가 죽지 않게 하는 값은 이미 목업 폴백이 내고 있고, 한 파일에 두 갈래가 있으면 어느 쪽으로 돌았는지 모른 채 지표를 읽게 됩니다.</p>
+<h2>M6 — 익숙함 누적 ✅ (재작업 두 번)</h2>
+<p>첫 실행에서 <strong>각성 대사가 41턴 동안 0회</strong>였습니다. 원인을 세 번의 실측으로 좁혔습니다:</p>
+<ol>
+<li><code>"자연스러운 자리에 넣는다"</code> → 모델은 이걸 "안 해도 되면"으로 읽습니다</li>
+<li><code>"반드시 넣는다"</code>로 올림 → 성실형은 나오나 무성의형은 0회. 유저가 <code>"네"</code>만 던지면 붙일 자리가 없다고 판단합니다</li>
+<li>같은 지시를 <strong>시스템 프롬프트 끝으로</strong> 옮김 → <code>"네"</code> 턴에서도 나왔습니다</li>
+</ol>
+<p><strong>뒤에 오는 지시가 이깁니다.</strong> <code>distance()</code>가 3화 용기의 순간을 눌렀던 것과 같은 구조였습니다. "진행 제어는 코드"의 적용 범위를 고정 대사 타이밍까지 넓혔습니다.</p>
+<p>결과: 배드(24) → 배드(26) → 트루(100), 폴백 0턴·파싱 실패 0턴. 고정 대사 3개가 원문 그대로 제 화·제 턴에 각 1회씩, 사실 진술 누수 0건.</p>
+<p><strong>다만 서툶 레벨(100/85/70)은 체감되지 않습니다.</strong> 턴당 줄바꿈 2.36/2.27/2.46으로 단조 감소가 아니고, 계량 지시로 바꿔도 안 움직였습니다. 샘플 대사가 few-shot으로 작동해 지시를 이기는 것으로 보이는데, 고치려면 3화×3레벨 9세트가 필요해 15분 룰로 미해결로 남겼습니다(#26).</p>
+<h2>톤 감수 ✅</h2>
+<p>희화화 선은 지켜지고 있었고 치명적 결함은 없었습니다. 필수 2건(3화 오프닝이 1화와 같은 회피 레지스터, 3회차 각성 대사가 호감도 30에서 준고백)과 게이지 판별에 직접 걸리는 것들을 고쳤습니다. 특히 <code>distance()</code> 5구간이 전부 한 축이라 30과 55가 같은 연기로 렌더링되던 것 — 실측에서 3화 우선순위 추가가 먹혀 저호감 30에서도 용기의 순간이 나왔습니다.</p>
+<h2>이름 — 「덜 떨려요」 확정</h2>
+<p>(가제)를 뗐습니다. 재도전 대사에서 왔지만 그 출처는 플레이한 사람만 알고, 배경 없이도 "원래 떨리는 사람"이라는 캐릭터가 한 줄로 전달됩니다. 재도전이 간판에서 내려간 것과 이름의 출처가 어긋나는 긴장은 있으나, 유저에게 보이지 않고 오히려 플레이 후 회수됩니다.</p>
+<h2>배포 — 여기서 멈췄습니다</h2>
+<p>푸시 전 요청하신 보안 조치를 했습니다:</p>
+<table>
+<thead>
+<tr>
+<th>항목</th>
+<th>조치</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>API 키 (sk-ant/AIza/gho_/JWT/AWS/PEM)</td>
+<td>히스토리·워킹트리 0건</td>
+</tr>
+<tr>
+<td>커밋 실메일</td>
+<td>GitHub noreply로 <strong>24개 커밋 전체 재작성</strong></td>
+</tr>
+<tr>
+<td>transcripts 로컬 절대경로·사용자명</td>
+<td>마스킹</td>
+</tr>
+<tr>
+<td>하이재킹 표면 (postinstall, 커밋된 훅)</td>
+<td>없음 확인</td>
+</tr>
+</tbody>
+</table>
+<p>정리 이전 blob이 히스토리에 남으면 후속 커밋으로 덮어도 소용없어서, 변환·정리를 <strong>한 커밋으로 합쳐</strong> 원본이 들어가지 않게 했습니다. 재작성으로 SHA가 전부 바뀌므로 문서가 참조하던 SHA도 비의존 형태로 고쳤습니다.</p>
+<p>푸시 완료: https://github.com/betterplaywon/ai-couple-poc</p>
+<p><strong>남은 것은 <a href="https://vercel.com/new">vercel.com/new</a>에서 import 한 번입니다.</strong> Vite는 자동 감지되니 기본값 그대로 두시고, <strong><code>ANTHROPIC_API_KEY</code>만 Environment Variables에 넣으세요.</strong> 키를 안 넣어도 배포는 성공하고 앱도 뜨는데 전 턴이 목업으로 돌아 대사가 스크립트가 됩니다 — 배포 직후 하단에 <code>데모 모드</code> 문구가 뜨는지 봐주세요.</p>
+<p>배포 URL 주시면 README에 바로 넣겠습니다(M10). 한 가지 미리 말씀드리면, <strong>edge 런타임·<code>api/</code>의 <code>../src</code> import·서버리스 함수 인식 셋은 로컬 dev 어댑터로만 검증했고 프로덕션에서는 아직 안 돌려봤습니다.</strong> 배포 후 <code>/api/chat</code>에 POST해서 200이 오는지가 첫 확인 지점입니다.</p></div></div><button class="expand-btn">Show more</button></div></div>
+</div></div>
+<div class="index-item"><a href="page-001.html#msg-2026-08-13T03-30-16-472Z"><div class="index-item-header"><span class="index-item-number">#5</span><time datetime="2026-08-13T03:30:16.472Z" data-timestamp="2026-08-13T03:30:16.472Z">2026-08-13T03:30:16.472Z</time></div><div class="index-item-content"><p><ide_opened_file>The user opened the file /Users/user/Desktop/ai-couple-poc/.env.local in the IDE. This may or may not be related to the current task.</ide_opened_file> vercel에 배포를 하니 에러가 발생해.</p>
+<p>12:25:35.749 api/chat.ts(2,48): error TS2835: Relative import paths need explicit file extensions in ECMAScript imports when '--moduleResolution' is 'node16' or 'nodenext'. Did you mean '../src/scenario/prompt.js'?
+12:25:35.749 api/chat.ts(3,26): error TS2835: Relative import paths need explicit file extensions in ECMAScript imports when '--moduleResolution' is 'node16' or 'nodenext'. Did you mean '../src/scenario/mock.js'?
+12:25:35.749 api/chat.ts(4,32): error TS2835: Relative import paths need explicit file extensions in ECMAScript imports when '--moduleResolution' is 'node16' or 'nodenext'. Did you mean '../src/engine/types.js'?
+12:25:35.750 api/chat.ts(8,15): error TS2591: Cannot find name 'process'. Do you need to install type definitions for node? Try <code>npm i --save-dev @types/node</code> and then add 'node' to the types field in your tsconfig.
+12:25:35.750 api/chat.ts(65,18): error TS2591: Cannot find name 'process'. Do you need to install type definitions for node? Try <code>npm i --save-dev @types/node</code> and then add 'node' to the types field in your tsconfig.
+12:25:35.886 src/scenario/prompt.ts(1,85): error TS2835: Relative import paths need explicit file extensions in ECMAScript imports when '--moduleResolution' is 'node16' or 'nodenext'. Did you mean '../engine/state.js'?
+12:25:35.886 src/scenario/prompt.ts(2,32): error TS2835: Relative import paths need explicit file extensions in ECMAScript imports when '--moduleResolution' is 'node16' or 'nodenext'. Did you mean '../engine/types.js'?
+12:25:35.887 src/scenario/prompt.ts(3,32): error TS2835: Relative import paths need explicit file extensions in ECMAScript imports when '--moduleResolution' is 'node16' or 'nodenext'. Did you mean './character.js'?
+12:25:35.887 src/scenario/prompt.ts(4,44): error TS2835: Relative import paths need explicit file extensions in ECMAScript imports when '--moduleResolution' is 'node16' or 'nodenext'. Did you mean './endings.js'?
+12:25:35.887 src/scenario/prompt.ts(5,30): error TS2835: Relative import paths need explicit file extensions in ECMAScript imports when '--moduleResolution' is 'node16' or 'nodenext'. Did you mean './safety.js'?
+12:25:35.887 src/scenario/prompt.ts(6,24): error TS2835: Relative import paths need explicit file extensions in ECMAScript imports when '--moduleResolution' is 'node16' or 'nodenext'. Did you mean './scenes.js'?
+12:25:36.045 src/scenario/mock.ts(1,61): error TS2835: Relative import paths need explicit file extensions in ECMAScript imports when '--moduleResolution' is 'node16' or 'nodenext'. Did you mean '../engine/state.js'?
+12:25:36.046 src/scenario/mock.ts(2,46): error TS2835: Relative import paths need explicit file extensions in ECMAScript imports when '--moduleResolution' is 'node16' or 'nodenext'. Did you mean '../engine/types.js'?
+12:25:36.160 src/scenario/endings.ts(1,44): error TS2835: Relative import paths need explicit file extensions in ECMAScript imports when '--moduleResolution' is 'node16' or 'nodenext'. Did you mean '../engine/types.js'?
+12:25:36.212 src/scenario/safety.ts(1,32): error TS2835: Relative import paths need explicit file extensions in ECMAScript imports when '--moduleResolution' is 'node16' or 'nodenext'. Did you mean './character.js'?
+12:25:36.246 src/scenario/scenes.ts(1,30): error TS2835: Relative import paths need explicit file extensions in ECMAScript imports when '--moduleResolution' is 'node16' or 'nodenext'. Did you mean '../engine/types.js'?
+12:25:36.319 src/engine/state.ts(1,67): error TS2835: Relative import paths need explicit file extensions in ECMAScript imports when '--moduleResolution' is 'node16' or 'nodenext'. Did you mean './types.js'?</p></div></a><div class="index-item-stats"><span>9 bash · 1 write</span>
+<div class="index-item-long-text"><div class="truncatable"><div class="truncatable-content"><div class="index-item-long-text-content"><p>vercel에 배포를 하니 에러가 발생해.</p>
+<p>12:25:35.749 api/chat.ts(2,48): error TS2835: Relative import paths need explicit file extensions in ECMAScript imports when '--moduleResolution' is 'node16' or 'nodenext'. Did you mean '../src/scenario/prompt.js'?
+12:25:35.749 api/chat.ts(3,26): error TS2835: Relative import paths need explicit file extensions in ECMAScript imports when '--moduleResolution' is 'node16' or 'nodenext'. Did you mean '../src/scenario/mock.js'?
+12:25:35.749 api/chat.ts(4,32): error TS2835: Relative import paths need explicit file extensions in ECMAScript imports when '--moduleResolution' is 'node16' or 'nodenext'. Did you mean '../src/engine/types.js'?
+12:25:35.750 api/chat.ts(8,15): error TS2591: Cannot find name 'process'. Do you need to install type definitions for node? Try <code>npm i --save-dev @types/node</code> and then add 'node' to the types field in your tsconfig.
+12:25:35.750 api/chat.ts(65,18): error TS2591: Cannot find name 'process'. Do you need to install type definitions for node? Try <code>npm i --save-dev @types/node</code> and then add 'node' to the types field in your tsconfig.
+12:25:35.886 src/scenario/prompt.ts(1,85): error TS2835: Relative import paths need explicit file extensions in ECMAScript imports when '--moduleResolution' is 'node16' or 'nodenext'. Did you mean '../engine/state.js'?
+12:25:35.886 src/scenario/prompt.ts(2,32): error TS2835: Relative import paths need explicit file extensions in ECMAScript imports when '--moduleResolution' is 'node16' or 'nodenext'. Did you mean '../engine/types.js'?
+12:25:35.887 src/scenario/prompt.ts(3,32): error TS2835: Relative import paths need explicit file extensions in ECMAScript imports when '--moduleResolution' is 'node16' or 'nodenext'. Did you mean './character.js'?
+12:25:35.887 src/scenario/prompt.ts(4,44): error TS2835: Relative import paths need explicit file extensions in ECMAScript imports when '--moduleResolution' is 'node16' or 'nodenext'. Did you mean './endings.js'?
+12:25:35.887 src/scenario/prompt.ts(5,30): error TS2835: Relative import paths need explicit file extensions in ECMAScript imports when '--moduleResolution' is 'node16' or 'nodenext'. Did you mean './safety.js'?
+12:25:35.887 src/scenario/prompt.ts(6,24): error TS2835: Relative import paths need explicit file extensions in ECMAScript imports when '--moduleResolution' is 'node16' or 'nodenext'. Did you mean './scenes.js'?
+12:25:36.045 src/scenario/mock.ts(1,61): error TS2835: Relative import paths need explicit file extensions in ECMAScript imports when '--moduleResolution' is 'node16' or 'nodenext'. Did you mean '../engine/state.js'?
+12:25:36.046 src/scenario/mock.ts(2,46): error TS2835: Relative import paths need explicit file extensions in ECMAScript imports when '--moduleResolution' is 'node16' or 'nodenext'. Did you mean '../engine/types.js'?
+12:25:36.160 src/scenario/endings.ts(1,44): error TS2835: Relative import paths need explicit file extensions in ECMAScript imports when '--moduleResolution' is 'node16' or 'nodenext'. Did you mean '../engine/types.js'?
+12:25:36.212 src/scenario/safety.ts(1,32): error TS2835: Relative import paths need explicit file extensions in ECMAScript imports when '--moduleResolution' is 'node16' or 'nodenext'. Did you mean './character.js'?
+12:25:36.246 src/scenario/scenes.ts(1,30): error TS2835: Relative import paths need explicit file extensions in ECMAScript imports when '--moduleResolution' is 'node16' or 'nodenext'. Did you mean '../engine/types.js'?
+12:25:36.319 src/engine/state.ts(1,67): error TS2835: Relative import paths need explicit file extensions in ECMAScript imports when '--moduleResolution' is 'node16' or 'nodenext'. Did you mean './types.js'?</p></div></div><button class="expand-btn">Show more</button></div></div>
+<div class="index-item-long-text"><div class="truncatable"><div class="truncatable-content"><div class="index-item-long-text-content"><p>수정을 푸시했습니다. <strong>Vercel에서 재배포(Redeploy)하시면 됩니다</strong> — 새 커밋이 들어갔으니 자동으로 트리거됐을 수도 있습니다.</p>
+<h2>원인</h2>
+<p>Vercel의 서버리스 함수 빌더는 <strong>루트 <code>tsconfig.json</code>만 봅니다.</strong> <code>api/chat.ts</code>를 진입점으로 잡고 거기서 <code>../src/</code>를 따라 들어가는데, 우리 루트 tsconfig는 <code>references</code>만 있는 솔루션 파일이라 <code>compilerOptions</code>가 비어 있었습니다. 그래서 빌더가 자기 기본값(<code>moduleResolution: node16</code>, node 타입 없음)을 적용했고, 그 조합에서:</p>
+<ul>
+<li><code>TS2835</code> — <code>node16</code>에선 상대 경로에 <code>.js</code> 확장자가 필수</li>
+<li><code>TS2591</code> — <code>process</code> 타입 없음</li>
+</ul>
+<p><code>tsconfig.api.json</code>은 <code>bundler</code> + <code>types:["node"]</code>로 제대로 돼 있었지만 <strong>그건 <code>tsc -b</code>만 씁니다.</strong> 그래서 로컬 빌드는 계속 통과했고, 푸시 전까지 안 보였습니다.</p>
+<h2>고친 방법</h2>
+<p>루트 <code>tsconfig.json</code>에 <code>compilerOptions</code>를 추가해 <code>tsconfig.api.json</code>과 일치시켰습니다. 추측으로 넘기지 않으려고 <strong>Vercel 기본값을 로컬에서 시뮬레이션해 같은 에러를 재현한 뒤</strong>, 수정 후 0건을 확인했습니다.</p>
+<p>상대 경로 전부에 <code>.js</code> 확장자를 붙이는 대안은 <code>api/</code>뿐 아니라 <code>src/</code> 전체를 건드려야 해서 거절했습니다. 대신 <strong>같은 설정이 두 파일에 있는 상태</strong>가 됐고, 한쪽만 고치면 다시 이런 일이 생기므로 두 파일 모두에 그 사실을 주석과 <code>docs/03-tradeoffs.md</code> #27로 남겼습니다.</p>
+<h2>재배포 후 확인할 것</h2>
+<ol>
+<li><strong>빌드 통과</strong> — 이번 에러가 사라졌는지</li>
+<li><code>/api/chat</code>에 POST해서 <strong>200이 오는지</strong> — edge 런타임에서 <code>@anthropic-ai/sdk</code>가 도는지, <code>api/</code>가 <code>../src/</code>를 import하는 구조가 번들러에서 풀리는지가 여기서 처음 검증됩니다</li>
+<li><strong>화면 하단에 <code>데모 모드</code> 문구가 없는지</strong> — 보이면 <code>ANTHROPIC_API_KEY</code>가 안 걸린 겁니다</li>
+</ol>
+<p>만약 이번엔 <code>process</code> 쪽만 다시 걸리면(<code>Cannot find type definition file for 'node'</code>), Vercel이 <code>@types/node</code>(현재 devDependencies)를 설치하지 않은 경우입니다. 그때는 <code>dependencies</code>로 옮기거나 <code>api/chat.ts</code>에 타입 선언 한 줄을 넣는 걸로 끝납니다 — 알려주시면 바로 하겠습니다.</p>
+<p>참고로 README의 <code>## 소개</code> 수정분은 그대로 두고 제 커밋을 그 위에 얹었습니다. 배포 URL 나오면 <code>🔗 프로토타입</code> 자리에 넣겠습니다(M10).</p></div></div><button class="expand-btn">Show more</button></div></div>
+</div></div>
+<div class="index-item"><a href="page-002.html#msg-2026-08-13T03-39-31-885Z"><div class="index-item-header"><span class="index-item-number">#6</span><time datetime="2026-08-13T03:39:31.885Z" data-timestamp="2026-08-13T03:39:31.885Z">2026-08-13T03:39:31.885Z</time></div><div class="index-item-content"><p>he Edge Function "api/chat" is referencing unsupported modules: - @anthropic-ai: node:fs, node:path</p></div></a><div class="index-item-stats"><span>4 bash · 3 edit · 1 toolsearch · 1 fetch</span>
+<div class="index-item-long-text"><div class="truncatable"><div class="truncatable-content"><div class="index-item-long-text-content"><p>푸시했습니다. <strong>재배포하시면 됩니다.</strong></p>
+<h2>원인</h2>
+<p><code>@anthropic-ai/sdk</code>가 <code>core/credentials</code>(<code>ant auth login</code> 프로필 인증 해석)와 <code>tools/agent-toolset</code>에서 <code>node:fs</code>·<code>node:path</code>를 참조합니다. 우리는 <code>apiKey</code>를 직접 넘기니 <strong>그 코드가 실행되진 않지만, 정적 import라 번들에는 들어갑니다.</strong> Edge 런타임은 이 모듈들을 지원하지 않습니다.</p>
+<h2>고친 방법 — Node.js 런타임으로</h2>
+<p><code>export const config = { runtime: 'edge' }</code>를 지웠습니다(Node가 Vercel 기본값). 다만 Node 런타임의 Web 표준 시그니처는 <strong>형태가 다릅니다</strong> — Vercel 문서로 확인했습니다:</p>
+<pre><code class="language-ts">export default async function handler(req: Request)   // edge 형태 — Node에서 인식 안 됨
+export default { fetch: handler }                      // Node 런타임
+</code></pre>
+<p><code>vite.config.ts</code>의 개발 어댑터도 <code>mod.default.fetch</code>로 맞췄습니다. 안 그러면 배포는 되는데 로컬만 깨집니다.</p>
+<p>로컬 실호출로 확인했습니다 — 200, 목업 폴백 없음, 2회차 각성 대사도 정상 발화(<code>"...이상하네요. 왜인지 모르겠는데, 당신 앞에서는 덜 떨려요."</code>).</p>
+<h2>왜 SDK를 버리지 않았나</h2>
+<p>"edge 유지 + raw fetch로 직접 호출"도 가능했지만 거절했습니다. 구조화 출력·에러 타입·재시도를 다시 짜야 하고(<a href="docs/03-tradeoffs.md">#9</a>), <strong>이 제품의 지연은 LLM 호출(초 단위)이 지배해서 edge의 콜드스타트 이점이 애초에 무의미합니다.</strong> Node 런타임은 모듈 제약이 없어 이 계열 문제가 재발하지 않는 이점도 있습니다.</p>
+<h2>재배포 후</h2>
+<ol>
+<li>빌드 통과</li>
+<li><code>/api/chat</code>에 POST → <strong>200</strong> (이게 프로덕션 첫 검증입니다)</li>
+<li>화면 하단에 <code>데모 모드</code> 문구가 <strong>없어야</strong> 합니다 — 보이면 <code>ANTHROPIC_API_KEY</code> 미설정</li>
+</ol>
+<p>두 번 연속 배포 단계에서 걸렸는데, 둘 다 <strong>로컬에서는 구조적으로 안 보이는 것</strong>이었습니다(빌드는 <code>tsconfig.api.json</code>을 쓰고, dev 어댑터는 vite 안에서 도니까 런타임 제약이 없습니다). 지금 남은 미지수는 <code>api/</code>가 <code>../src/</code>를 import하는 구조가 Vercel 번들러에서 풀리는지 하나입니다 — 여기서도 걸리면 알려주세요.</p>
+<p>URL 나오면 README에 넣겠습니다.</p></div></div><button class="expand-btn">Show more</button></div></div>
 </div></div>
         
 
@@ -24771,6 +24903,7 @@ grep -rn &quot;ANTHROPIC&quot; dist/ 2&gt;/dev/null
 <span class="current">Index</span>
 <span class="disabled">&larr; Prev</span>
 <a href="page-001.html">1</a>
+<a href="page-002.html">2</a>
 <a href="page-001.html">Next &rarr;</a>
 </div>
 
@@ -24790,7 +24923,7 @@ grep -rn &quot;ANTHROPIC&quot; dist/ 2&gt;/dev/null
         </dialog>
         <script>
 (function() {
-    var totalPages = 1;
+    var totalPages = 2;
     var searchBox = document.getElementById('search-box');
     var searchInput = document.getElementById('search-input');
     var searchBtn = document.getElementById('search-btn');
