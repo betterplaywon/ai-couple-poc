@@ -50,7 +50,7 @@
 
 배포 후 확인할 것 (프로덕션에서 처음 도는 경로다):
 - `api/chat.ts`가 서버리스 함수로 잡혔는가 (`/api/chat`에 POST해서 200이 오는가)
-- edge 런타임에서 `@anthropic-ai/sdk`가 도는가
+- ~~edge 런타임에서 `@anthropic-ai/sdk`가 도는가~~ → **불가 확인. Node 런타임으로 옮김** ([#28](03-tradeoffs.md))
 - `api/`가 `../src/`를 import하는 구조가 Vercel 번들러에서 풀리는가
 
 셋 다 로컬 dev 어댑터([#10](03-tradeoffs.md))로만 검증했고 **프로덕션에서는 아직 안 돌려봤다.**

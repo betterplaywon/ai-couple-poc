@@ -22,7 +22,8 @@ function apiDev(): Plugin {
                 headers: { 'content-type': 'application/json' },
                 body: chunks.length ? Buffer.concat(chunks) : undefined,
               })
-              const result: Response = await mod.default(request)
+              // Vercel Node 런타임의 Web 표준 시그니처와 같은 모양으로 호출한다.
+              const result: Response = await mod.default.fetch(request)
               res.statusCode = result.status
               res.setHeader('content-type', 'application/json')
               res.end(await result.text())

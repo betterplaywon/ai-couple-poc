@@ -3,8 +3,16 @@ import { buildSystemPrompt, TURN_SCHEMA } from '../src/scenario/prompt'
 import { mockTurn } from '../src/scenario/mock'
 import type { GameState } from '../src/engine/types'
 
-export const config = { runtime: 'edge' }
-
+/**
+ * 런타임은 **Node.js**다 (Vercel 기본값이라 선언하지 않는다).
+ *
+ * edge로 두면 배포가 깨진다: `@anthropic-ai/sdk`가 `node:fs`·`node:path`를 참조하는데
+ * (`core/credentials`의 프로필 인증 해석, `tools/agent-toolset`) edge 런타임은 이를 지원하지 않는다.
+ * 우리는 apiKey를 직접 넘기므로 그 코드가 실행되진 않지만, 정적 import라 번들에는 들어간다.
+ * (2026-08-13 실측: "Edge Function api/chat is referencing unsupported modules")
+ *
+ * 이 제품에서 지연을 지배하는 건 LLM 호출(초 단위)이라 edge의 콜드스타트 이점은 무의미하다.
+ */
 const MODEL = process.env.ANTHROPIC_MODEL ?? 'claude-haiku-4-5'
 const MAX_TOKENS = 1024
 /** 화당 최대 5턴 × 3화 = 15턴. 넉넉히 잡되 무한 이력은 막는다. */
@@ -49,7 +57,7 @@ function parseBody(body: unknown): ChatRequest | null {
   return { state: b.state, history, message: b.message.slice(0, 2000) }
 }
 
-export default async function handler(req: Request): Promise<Response> {
+async function handler(req: Request): Promise<Response> {
   if (req.method !== 'POST') return json({ error: 'method_not_allowed' }, 405)
 
   let payload: ChatRequest | null
@@ -104,3 +112,10 @@ export default async function handler(req: Request): Promise<Response> {
     return json({ raw: JSON.stringify(mockTurn(state, message)), mock: 'upstream', reason })
   }
 }
+
+/**
+ * Vercel Node.js 런타임의 Web 표준 시그니처 — 기본 export는 **`fetch` 메서드를 가진 객체**다.
+ * `export default async function(req)`(edge 형태)는 Node 런타임에서 인식되지 않는다.
+ * 개발 서버 어댑터(`vite.config.ts`)도 `mod.default.fetch`를 호출한다.
+ */
+export default { fetch: handler }
