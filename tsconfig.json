@@ -1,4 +1,26 @@
 {
+  /*
+   * 이 파일은 솔루션 파일이라 `files: []`다 — 로컬 `tsc -b`는 아래 references만 빌드하고
+   * 여기 compilerOptions는 쓰지 않는다.
+   *
+   * 그런데 **Vercel의 서버리스 함수 빌더는 이 파일만 본다.** `api/chat.ts`를 진입점으로 잡고
+   * 루트 tsconfig의 compilerOptions로 타입체크한 뒤, 거기서 `../src/`를 따라 들어간다.
+   * compilerOptions가 없으면 빌더 기본값(`moduleResolution: node16`, node 타입 없음)이 적용돼
+   * 배포가 TS2835(확장자 없는 상대 경로) · TS2591(`process` 없음)로 깨진다. (2026-08-13 실측)
+   *
+   * 그래서 여기 값은 `tsconfig.api.json`과 **일치시켜 둔다.** 한쪽만 고치면 로컬은 통과하고
+   * 배포만 깨지는데, 그건 푸시하기 전까지 안 보인다.
+   */
+  "compilerOptions": {
+    "target": "es2023",
+    "lib": ["ES2023", "DOM"],
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "types": ["node"],
+    "skipLibCheck": true,
+    "verbatimModuleSyntax": true,
+    "moduleDetection": "force"
+  },
   "files": [],
   "references": [
     { "path": "./tsconfig.app.json" },
